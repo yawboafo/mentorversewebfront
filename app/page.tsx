@@ -36,12 +36,23 @@ export default function HomePage() {
   const fetchMentors = async () => {
     try {
       setIsLoadingMentors(true);
-      const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE });
+      const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE * 2 }); // Fetch more to compensate for invalid ones
       
       // Filter out any mentors that might cause issues
-      const validMentors = (response.data || []).filter(mentor => {
+      const potentialMentors = (response.data || []).filter(mentor => {
         return mentor.id && (mentor.user?.fullName || mentor.headline);
       });
+      
+      // Validate each mentor by attempting to fetch their full profile
+      const validationResults = await Promise.allSettled(
+        potentialMentors.map(mentor => mentorsApi.getMentor(mentor.id))
+      );
+      
+      const validMentors = potentialMentors.filter((_, index) => {
+        return validationResults[index].status === 'fulfilled';
+      }).slice(0, ITEMS_PER_PAGE); // Only take the first ITEMS_PER_PAGE valid ones
+      
+      console.log(`✅ Validated ${validMentors.length} of ${potentialMentors.length} mentors`);
       
       setMentors(validMentors);
       setMentorsTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
