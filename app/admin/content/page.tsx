@@ -16,7 +16,8 @@ import {
   Loader2,
   Archive,
   CheckCircle2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -74,6 +75,23 @@ export default function AdminContentPage() {
       ));
     } catch (err: any) {
       toast.error('Failed to publish content');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (contentId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this content? This action cannot be undone.')) {
+      return;
+    }
+
+    setProcessingId(contentId);
+    try {
+      await adminApi.deleteContent(contentId);
+      toast.success('Content deleted');
+      setContent(prev => prev.filter(item => item.id !== contentId));
+    } catch (err: any) {
+      toast.error('Failed to delete content');
     } finally {
       setProcessingId(null);
     }
@@ -206,6 +224,15 @@ export default function AdminContentPage() {
                     size="sm"
                   >
                     <Link href={`/content/${item.id}`}>View</Link>
+                  </Button>
+                  <Button
+                    onClick={() => handleDelete(item.id)}
+                    disabled={processingId === item.id}
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>

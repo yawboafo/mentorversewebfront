@@ -27,7 +27,7 @@ export default function AdminPage() {
         <h1 className="text-3xl font-bold">Admin Panel</h1>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <h2 className="text-xl font-bold mb-2">Mentor Applications</h2>
           <p className="text-muted-foreground mb-4">
@@ -45,6 +45,16 @@ export default function AdminPage() {
           </p>
           <Button asChild>
             <Link href="/admin/content">Manage Content</Link>
+          </Button>
+        </Card>
+
+        <Card className="p-6 hover:shadow-lg transition-shadow">
+          <h2 className="text-xl font-bold mb-2">User Management</h2>
+          <p className="text-muted-foreground mb-4">
+            Manage users, roles, and permissions
+          </p>
+          <Button asChild>
+            <Link href="/admin/users">Manage Users</Link>
           </Button>
         </Card>
       </div>

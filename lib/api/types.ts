@@ -367,6 +367,13 @@ export interface ContentDraft {
 }
 
 // Admin Types
-export interface MentorApplicationAdmin extends Mentor {
-  user_email: string;
+export interface MentorApplicationAdmin extends Omit<Mentor, 'user'> {
+  user_email?: string;
+  user?: {
+    id: string;
+    fullName: string;
+    email?: string;
+    avatarUrl?: string;
+    country?: string;
+  };
 }
