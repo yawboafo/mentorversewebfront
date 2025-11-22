@@ -47,15 +47,10 @@ export default function LoginPage() {
       // Show success toast immediately
       toast.success('Welcome back! 🎉');
       
-      // Refresh user context to update auth state
-      console.log('🔄 Refreshing user context...');
-      await refreshUser();
-      console.log('✅ User context refreshed');
-      
-      // Determine redirect path based on user role and onboarding status
+      // Determine redirect path based on user role from login response
       let redirectPath = '/dashboard';
       
-      // Check role first - admin and mentor skip onboarding
+      // Check role FIRST - admin and mentor skip onboarding
       if (response.user.role === 'admin') {
         redirectPath = '/admin';
         console.log('👑 Admin user, redirecting to admin panel');
@@ -82,10 +77,7 @@ export default function LoginPage() {
       
       console.log('🚀 Navigating to:', redirectPath);
       
-      // Small delay to ensure state is fully updated
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Use window.location for reliable navigation after login
+      // Use window.location for full page reload (AuthProvider will load user on next page)
       window.location.href = redirectPath;
     } catch (err: any) {
       console.error('❌ Login error:', err);

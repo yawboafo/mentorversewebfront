@@ -31,6 +31,40 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [shouldBlock, setShouldBlock] = useState(false);
+
+  // Check localStorage IMMEDIATELY on mount (synchronous, before any async operations)
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('user');
+    if (storedUserData) {
+      try {
+        const storedUser = JSON.parse(storedUserData);
+        console.log('💾 [IMMEDIATE] Stored user:', storedUser.email, 'role:', storedUser.role);
+        
+        // Block rendering and redirect admin/mentor immediately
+        if (storedUser.role === 'admin') {
+          console.log('👑 [IMMEDIATE] Admin detected, blocking and redirecting');
+          setShouldBlock(true);
+          router.replace('/admin');
+          return;
+        }
+        if (storedUser.role === 'mentor') {
+          console.log('🎓 [IMMEDIATE] Mentor detected, blocking and redirecting');
+          setShouldBlock(true);
+          router.replace('/mentor/dashboard');
+          return;
+        }
+        if (storedUser.onboarding_completed) {
+          console.log('✅ [IMMEDIATE] Onboarding completed, blocking and redirecting');
+          setShouldBlock(true);
+          router.replace('/dashboard');
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
+    }
+  }, []); // Run only once on mount
 
   // Individual onboarding state
   const [individualData, setIndividualData] = useState({
@@ -185,7 +219,8 @@ export default function OnboardingPage() {
     }
   };
 
-  if (authLoading || !user) {
+  // Block rendering if admin/mentor detected
+  if (shouldBlock || authLoading || !user) {
     return (
       <div className="flex min-h-[calc(100vh-200px)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
