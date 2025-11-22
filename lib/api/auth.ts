@@ -19,7 +19,9 @@ export const authApi = {
   },
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
+    console.log('📝 Registering with data:', data);
     const response = await apiClient.post<LoginResponse>('/auth/register', data);
+    console.log('✅ Registration response received');
     
     if (response.access_token) {
       localStorage.setItem('access_token', response.access_token);

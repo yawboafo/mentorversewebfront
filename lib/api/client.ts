@@ -35,6 +35,15 @@ export const apiClient = {
     }
 
     try {
+      // Log request details for debugging
+      if (options.method === 'POST' || options.method === 'PUT') {
+        console.log('📤 API Request:', {
+          method: options.method,
+          endpoint,
+          body: options.body ? JSON.parse(options.body as string) : null
+        });
+      }
+      
       const response = await fetch(url, {
         ...options,
         headers,
@@ -66,6 +75,12 @@ export const apiClient = {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('❌ API Error Response:', {
+          endpoint,
+          status: response.status,
+          data
+        });
+        
         throw new ApiException(
           data.message || data.detail || 'Request failed',
           response.status,
