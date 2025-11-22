@@ -1,14 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { authApi } from '@/lib/api/auth';
+import { useAuth } from '@/hooks/use-auth';
 import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
+import { toast } from 'sonner';
 import { 
   Sparkles, 
   TrendingUp, 
@@ -17,13 +23,66 @@ import {
   Award,
   Zap,
   CheckCircle2,
-  ArrowLeft
+  ArrowLeft,
+  Mail,
+  Lock,
+  User as UserIcon
 } from 'lucide-react';
 
 export default function MentorJoinPage() {
+  const router = useRouter();
+  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
   const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const handleEmailRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match 🚫');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long 🔐');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Register as mentor (backend will set role to 'user' initially, needs mentor application)
+      const response = await authApi.register({
+        full_name: formData.full_name,
+        email: formData.email,
+        password: formData.password,
+        account_type: 'individual',
+      });
+      
+      await refreshUser();
+      toast.success('Account created! Please complete your mentor application 🎉');
+      
+      // Redirect to mentor application page
+      router.push('/mentor/apply');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      const errorMessage = err.errors 
+        ? Object.entries(err.errors).map(([field, messages]) => `${field}: ${(messages as string[]).join(', ')}`).join('; ')
+        : err.message || 'Failed to create account. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSocialLogin = async (provider: SocialProvider) => {
     setError('');
@@ -219,11 +278,11 @@ export default function MentorJoinPage() {
                 </motion.div>
 
                 <CardTitle className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Sign up with Social
+                  Join as a Mentor
                 </CardTitle>
 
                 <CardDescription className="text-base">
-                  Choose your preferred platform to continue
+                  Sign up with social or create an account
                 </CardDescription>
               </CardHeader>
 
@@ -234,11 +293,100 @@ export default function MentorJoinPage() {
                   </Alert>
                 )}
 
-                <SocialLoginGroup
-                  onProviderClick={handleSocialLogin}
-                  isLoading={isLoading}
-                  loadingProvider={loadingProvider}
-                />
+                <Tabs defaultValue="social" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="social">Social Login</TabsTrigger>
+                    <TabsTrigger value="email">Email</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="social" className="space-y-4 mt-6">
+                    <SocialLoginGroup
+                      onProviderClick={handleSocialLogin}
+                      isLoading={isLoading}
+                      loadingProvider={loadingProvider}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="email" className="space-y-4 mt-6">
+                    <form onSubmit={handleEmailRegister} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="full_name">Full Name</Label>
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="full_name"
+                            type="text"
+                            placeholder="John Doe"
+                            value={formData.full_name}
+                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                            className="pl-10"
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="pl-10"
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            className="pl-10"
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            placeholder="••••••••"
+                            value={formData.confirmPassword}
+                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            className="pl-10"
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Creating Account...' : 'Create Account'}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
 
                 <div className="space-y-4 pt-4">
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
