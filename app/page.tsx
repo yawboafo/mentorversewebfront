@@ -279,7 +279,7 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
               {mentors.map((mentor, i) => (
-                <Link key={mentor.id} href={`/mentors/${mentor.id}`}>
+                <Link key={mentor.id} href={`/mentors/${mentor.id}`} prefetch={false}>
                   <motion.div 
                     className="flex flex-col items-center text-center group cursor-pointer"
                     initial={{ opacity: 0, y: 50, scale: 0.8 }}
