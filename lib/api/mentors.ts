@@ -63,7 +63,16 @@ export const mentorsApi = {
       socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : {}
     };
     
-    console.log('📤 Mentor application request:', requestBody);
+    console.log('📤 Mentor application request body:', requestBody);
+    console.log('📊 Request validation:', {
+      headlineLength: requestBody.headline.length,
+      shortBioLength: requestBody.shortBio.length,
+      longBioLength: requestBody.longBio.length,
+      areasCount: requestBody.areasOfExpertise.length,
+      languagesCount: requestBody.languages.length,
+      experienceYears: requestBody.experienceYears
+    });
+    
     return apiClient.post<Mentor>('/mentor/apply', requestBody);
   },
 

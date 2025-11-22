@@ -100,9 +100,15 @@ export default function MentorApplyPage() {
     e.preventDefault();
     setError('');
 
-    // Validation
+    // Validation (matching backend requirements)
     if (!formData.headline.trim()) {
       setError('Please provide a headline');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (formData.headline.trim().length < 10) {
+      setError('Headline must be at least 10 characters long');
       setCurrentStep(1);
       return;
     }
@@ -113,8 +119,20 @@ export default function MentorApplyPage() {
       return;
     }
 
+    if (formData.short_bio.trim().length < 50) {
+      setError('Short bio must be at least 50 characters long');
+      setCurrentStep(1);
+      return;
+    }
+
     if (!formData.long_bio.trim()) {
       setError('Please provide a detailed bio');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (formData.long_bio.trim().length < 200) {
+      setError('Detailed bio must be at least 200 characters long');
       setCurrentStep(1);
       return;
     }
@@ -141,13 +159,21 @@ export default function MentorApplyPage() {
 
     try {
       console.log('📝 Submitting mentor application:', formData);
-      await mentorsApi.applyToBecomeMentor(formData);
+      const response = await mentorsApi.applyToBecomeMentor(formData);
+      console.log('✅ Application submitted successfully:', response);
       toast.success('Application submitted successfully! 🎉');
       
       setTimeout(() => {
         router.push('/mentor/pending');
       }, 2000);
     } catch (err: any) {
+      console.error('❌ Application error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        status: err.status,
+        errors: err.errors,
+        detail: err.detail
+      });
       console.error('❌ Application error:', err);
       const errorMessage = err.message || 'Failed to submit application. Please try again.';
       setError(errorMessage);
@@ -332,7 +358,7 @@ export default function MentorApplyPage() {
                   >
                     <div className="space-y-2">
                       <Label htmlFor="headline" className="text-base font-semibold">
-                        Professional Headline *
+                        Professional Headline * <span className="text-sm text-muted-foreground">(min 10 chars)</span>
                       </Label>
                       <Input
                         id="headline"
@@ -342,11 +368,14 @@ export default function MentorApplyPage() {
                         required
                         className="h-12 text-base"
                       />
+                      <p className="text-sm text-muted-foreground text-right">
+                        {formData.headline.length} characters
+                      </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="short_bio" className="text-base font-semibold">
-                        Short Bio (150 characters) *
+                        Short Bio * <span className="text-sm text-muted-foreground">(min 50 chars)</span>
                       </Label>
                       <Textarea
                         id="short_bio"
@@ -354,18 +383,19 @@ export default function MentorApplyPage() {
                         value={formData.short_bio}
                         onChange={(e) => setFormData({ ...formData, short_bio: e.target.value })}
                         required
-                        maxLength={150}
                         className="text-base resize-none"
                         rows={3}
                       />
-                      <p className="text-sm text-muted-foreground text-right">
-                        {formData.short_bio.length}/150
+                      <p className={`text-sm text-right ${
+                        formData.short_bio.length < 50 ? 'text-orange-500' : 'text-green-600'
+                      }`}>
+                        {formData.short_bio.length} characters {formData.short_bio.length >= 50 ? '✓' : `(need ${50 - formData.short_bio.length} more)`}
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="long_bio" className="text-base font-semibold">
-                        Detailed Bio *
+                        Detailed Bio * <span className="text-sm text-muted-foreground">(min 200 chars)</span>
                       </Label>
                       <Textarea
                         id="long_bio"
@@ -376,6 +406,11 @@ export default function MentorApplyPage() {
                         className="text-base resize-none"
                         rows={6}
                       />
+                      <p className={`text-sm text-right ${
+                        formData.long_bio.length < 200 ? 'text-orange-500' : 'text-green-600'
+                      }`}>
+                        {formData.long_bio.length} characters {formData.long_bio.length >= 200 ? '✓' : `(need ${200 - formData.long_bio.length} more)`}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
