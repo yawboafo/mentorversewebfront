@@ -43,6 +43,26 @@ export const authApi = {
     return apiClient.get<User>('/me');
   },
 
+  async getOAuthUrl(provider: string, intent: 'user' | 'mentor'): Promise<{ url: string }> {
+    return apiClient.get<{ url: string }>(`/auth/oauth/${provider}/url?intent=${intent}`);
+  },
+
+  async handleOAuthCallback(code: string, state: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/auth/oauth/callback', {
+      code,
+      state,
+    });
+    
+    if (response.access_token) {
+      localStorage.setItem('access_token', response.access_token);
+      if (response.refresh_token) {
+        localStorage.setItem('refresh_token', response.refresh_token);
+      }
+    }
+    
+    return response;
+  },
+
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

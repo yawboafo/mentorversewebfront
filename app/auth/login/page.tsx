@@ -10,15 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
-import { useAuth } from '@/hooks/use-auth';
+import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
-import { Mail, Lock, ArrowRight, Sparkles, Shield } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Sparkles, Shield, Users } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
@@ -32,15 +34,16 @@ export default function LoginPage() {
 
     try {
       const response = await authApi.login(formData.email, formData.password);
-      await refreshUser();
       
       toast.success('Welcome back! 🎉');
       
-      // Redirect based on user role
-      if (response.user.role === 'mentor') {
+      // Redirect based on user role and onboarding status
+      if (!response.user.onboarding_completed) {
+        router.push('/onboarding');
+      } else if (response.user.role === 'mentor') {
         router.push('/mentor/dashboard');
       } else if (response.user.role === 'admin') {
-        router.push('/admin');
+        router.push('/admin/dashboard');
       } else {
         router.push('/dashboard');
       }
@@ -48,6 +51,24 @@ export default function LoginPage() {
       setError(err.message || 'Failed to login. Please check your credentials.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: SocialProvider) => {
+    setError('');
+    setIsSocialLoading(true);
+    setLoadingProvider(provider);
+
+    try {
+      const response = await authApi.getOAuthUrl(provider, 'user');
+      // Store intent for callback handling
+      localStorage.setItem('oauth_intent', 'user');
+      // Redirect to provider
+      window.location.href = response.url;
+    } catch (err: any) {
+      setError(err.message || `Failed to initiate ${provider} login. Please try again.`);
+      setIsSocialLoading(false);
+      setLoadingProvider(null);
     }
   };
 
@@ -107,19 +128,48 @@ export default function LoginPage() {
             </motion.div>
           </CardHeader>
           
+          <CardContent className="space-y-6 pb-2">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Alert variant="destructive" className="border-2">
+                  <AlertDescription className="font-medium">{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+
+            {/* Social Login Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-4"
+            >
+              <SocialLoginGroup
+                onProviderClick={handleSocialLogin}
+                isLoading={isSocialLoading}
+                loadingProvider={loadingProvider}
+              />
+            </motion.div>
+
+            {/* Divider */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Separator />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
+                <span className="text-sm font-semibold text-muted-foreground">or continue with email</span>
+              </div>
+            </motion.div>
+          </CardContent>
+
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6 pb-2">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <Alert variant="destructive" className="border-2">
-                    <AlertDescription className="font-medium">{error}</AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-              
               <motion.div 
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
@@ -219,17 +269,37 @@ export default function LoginPage() {
                 </Button>
               </motion.div>
               
-              <motion.p 
-                className="text-center text-base font-medium text-foreground/70"
+              <motion.div
+                className="space-y-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
-                New here?{' '}
-                <Link href="/auth/register" className="font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text hover:from-purple-700 hover:to-pink-700 transition-all">
-                  Create account →
+                <p className="text-center text-base font-medium text-foreground/70">
+                  New here?{' '}
+                  <Link href="/auth/register" className="font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text hover:from-purple-700 hover:to-pink-700 transition-all">
+                    Create account →
+                  </Link>
+                </p>
+
+                <div className="relative">
+                  <Separator />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
+                    <span className="text-xs font-semibold text-muted-foreground">Are you a mentor?</span>
+                  </div>
+                </div>
+
+                <Link href="/mentor/join">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 gap-2 border-2 border-purple-200 hover:border-purple-500 hover:bg-purple-50 transition-all"
+                  >
+                    <Users className="h-5 w-5 text-purple-600" />
+                    <span className="font-bold">Join as a Mentor</span>
+                  </Button>
                 </Link>
-              </motion.p>
+              </motion.div>
             </CardFooter>
           </form>
         </Card>

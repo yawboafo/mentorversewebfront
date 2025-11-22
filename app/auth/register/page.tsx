@@ -11,15 +11,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
-import { useAuth } from '@/hooks/use-auth';
+import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
-import { User, Mail, Lock, ArrowRight, Sparkles, Shield, Briefcase, UserCircle, Check } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Sparkles, Shield, Briefcase, UserCircle, Check, Users } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSocialLoading, setIsSocialLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     full_name: '',
@@ -46,20 +48,45 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await authApi.register({
+      const response = await authApi.register({
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         account_type: formData.account_type,
       });
       
-      await refreshUser();
       toast.success('Account created successfully! 🎉');
-      router.push('/onboarding');
+      
+      // Redirect based on onboarding status
+      if (!response.user.onboarding_completed) {
+        router.push('/onboarding');
+      } else if (response.user.role === 'mentor') {
+        router.push('/mentor/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: SocialProvider) => {
+    setError('');
+    setIsSocialLoading(true);
+    setLoadingProvider(provider);
+
+    try {
+      const response = await authApi.getOAuthUrl(provider, 'user');
+      // Store intent for callback handling
+      localStorage.setItem('oauth_intent', 'user');
+      // Redirect to provider
+      window.location.href = response.url;
+    } catch (err: any) {
+      setError(err.message || `Failed to initiate ${provider} sign up. Please try again.`);
+      setIsSocialLoading(false);
+      setLoadingProvider(null);
     }
   };
 
@@ -120,20 +147,49 @@ export default function RegisterPage() {
               </CardDescription>
             </motion.div>
           </CardHeader>
+
+          <CardContent className="space-y-5 pb-2">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Alert variant="destructive" className="border-2">
+                  <AlertDescription className="font-medium">{error}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+
+            {/* Social Login Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-4"
+            >
+              <SocialLoginGroup
+                onProviderClick={handleSocialLogin}
+                isLoading={isSocialLoading}
+                loadingProvider={loadingProvider}
+              />
+            </motion.div>
+
+            {/* Divider */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Separator />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
+                <span className="text-sm font-semibold text-muted-foreground">or register with email</span>
+              </div>
+            </motion.div>
+          </CardContent>
           
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-5 pb-2">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <Alert variant="destructive" className="border-2">
-                    <AlertDescription className="font-medium">{error}</AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-              
               <motion.div 
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
@@ -370,17 +426,37 @@ export default function RegisterPage() {
                 </Button>
               </motion.div>
               
-              <motion.p 
-                className="text-center text-base font-medium text-foreground/70"
+              <motion.div
+                className="space-y-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
               >
-                Already have an account?{' '}
-                <Link href="/auth/login" className="font-black text-transparent bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text hover:from-cyan-700 hover:to-blue-700 transition-all">
-                  Sign in →
+                <p className="text-center text-base font-medium text-foreground/70">
+                  Already have an account?{' '}
+                  <Link href="/auth/login" className="font-black text-transparent bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text hover:from-cyan-700 hover:to-blue-700 transition-all">
+                    Sign in →
+                  </Link>
+                </p>
+
+                <div className="relative">
+                  <Separator />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
+                    <span className="text-xs font-semibold text-muted-foreground">Are you a mentor?</span>
+                  </div>
+                </div>
+
+                <Link href="/mentor/join">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 gap-2 border-2 border-cyan-200 hover:border-cyan-500 hover:bg-cyan-50 transition-all"
+                  >
+                    <Users className="h-5 w-5 text-cyan-600" />
+                    <span className="font-bold">Join as a Mentor</span>
+                  </Button>
                 </Link>
-              </motion.p>
+              </motion.div>
             </CardFooter>
           </form>
         </Card>
