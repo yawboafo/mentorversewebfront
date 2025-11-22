@@ -67,6 +67,9 @@ export default function MentorJoinPage() {
         account_type: 'individual',
       });
       
+      // Store mentor registration intent
+      localStorage.setItem('mentor_registration', 'true');
+      
       await refreshUser();
       toast.success('Account created! Please complete your mentor application 🎉');
       
