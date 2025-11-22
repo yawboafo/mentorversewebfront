@@ -35,13 +35,18 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Starting login process...');
       const response = await authApi.login(formData.email, formData.password);
+      console.log('✅ Login successful, token stored');
+      console.log('👤 User:', response.user.email, 'Role:', response.user.role, 'Onboarding:', response.user.onboarding_completed);
       
       // Show success toast immediately
       toast.success('Welcome back! 🎉');
       
       // Refresh user context to update auth state
+      console.log('🔄 Refreshing user context...');
       await refreshUser();
+      console.log('✅ User context refreshed');
       
       // Determine redirect path based on user role and onboarding status
       let redirectPath = '/dashboard';
@@ -54,9 +59,12 @@ export default function LoginPage() {
         redirectPath = '/admin';
       }
       
+      console.log('🚀 Navigating to:', redirectPath);
+      
       // Use window.location for reliable navigation after login
       window.location.href = redirectPath;
     } catch (err: any) {
+      console.error('❌ Login error:', err);
       setError(err.message || 'Failed to login. Please check your credentials.');
       setIsLoading(false);
     }

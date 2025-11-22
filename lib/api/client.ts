@@ -42,7 +42,11 @@ export const apiClient = {
 
       // Handle 401 Unauthorized
       if (response.status === 401) {
+        console.error('🚨 401 Unauthorized - clearing tokens and redirecting to login');
+        console.error('Endpoint:', endpoint);
         if (typeof window !== 'undefined') {
+          const hadToken = !!localStorage.getItem('access_token');
+          console.error('Had token before clearing:', hadToken);
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           window.location.href = '/auth/login';

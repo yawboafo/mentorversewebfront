@@ -19,14 +19,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      if (authApi.isAuthenticated()) {
+      const hasToken = authApi.isAuthenticated();
+      console.log('🔍 refreshUser - Has token:', hasToken);
+      
+      if (hasToken) {
+        console.log('📡 Fetching current user from /me...');
         const userData = await authApi.getCurrentUser();
+        console.log('✅ User data received:', userData.email);
         setUser(userData);
       } else {
+        console.log('⚠️ No token found, setting user to null');
         setUser(null);
       }
     } catch (error) {
-      console.error('Failed to fetch user:', error);
+      console.error('❌ Failed to fetch user:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
