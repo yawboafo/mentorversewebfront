@@ -11,32 +11,53 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mentorsApi, MentorsQuery } from '@/lib/api/mentors';
 import { Mentor } from '@/lib/api/types';
-import { Search, Users, Play, MapPin, Verified, Sparkles } from 'lucide-react';
+import { Search, Users, Play, MapPin, Verified, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function MentorsPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchMentors();
-  }, []);
+  }, [currentPage]);
 
   const fetchMentors = async (query?: MentorsQuery) => {
     try {
       setIsLoading(true);
-      const data = await mentorsApi.getMentors(query);
-      setMentors(data || []);
+      const finalQuery: MentorsQuery = {
+        ...query,
+        page: query?.page || currentPage,
+        limit: ITEMS_PER_PAGE
+      };
+      
+      const response = await mentorsApi.getMentors(finalQuery);
+      setMentors(response.data || []);
+      setTotalItems(response.total || 0);
+      setTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
       setMentors([]);
+      setTotalItems(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSearch = () => {
-    fetchMentors({ q: searchQuery });
+    setCurrentPage(1);
+    fetchMentors({ q: searchQuery, page: 1 });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getInitials = (name: string) => {
@@ -167,6 +188,64 @@ export default function MentorsPage() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-12 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              // Show first page, last page, current page, and pages around current
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="min-w-[40px]"
+                  >
+                    {page}
+                  </Button>
+                );
+              } else if (page === currentPage - 2 || page === currentPage + 2) {
+                return <span key={page} className="px-2">...</span>;
+              }
+              return null;
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Results info */}
+      {!isLoading && mentors.length > 0 && (
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} mentors
         </div>
       )}
     </div>

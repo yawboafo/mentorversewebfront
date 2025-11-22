@@ -4,24 +4,37 @@ import type { Mentor, MentorApplication, MentorDashboard } from './types';
 export interface MentorsQuery {
   q?: string;
   tags?: string[];
+  page?: number;
+  limit?: number;
+}
+
+export interface MentorsResponse {
+  data: Mentor[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export const mentorsApi = {
-  async getMentors(query?: MentorsQuery): Promise<Mentor[]> {
+  async getMentors(query?: MentorsQuery): Promise<MentorsResponse> {
     const params = new URLSearchParams();
     if (query?.q) params.append('q', query.q);
     if (query?.tags) query.tags.forEach(tag => params.append('tags', tag));
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
     
     const endpoint = `/mentors${params.toString() ? `?${params.toString()}` : ''}`;
-    console.log('getMentors endpoint:', endpoint);
-    const response = await apiClient.get<Mentor[] | { data: Mentor[] }>(endpoint);
-    console.log('getMentors raw response:', response);
-    console.log('getMentors response type:', typeof response);
-    console.log('getMentors is array:', Array.isArray(response));
+    const response = await apiClient.get<Mentor[] | MentorsResponse>(endpoint);
     // Handle both array and paginated response formats
-    const result = Array.isArray(response) ? response : (response.data || []);
-    console.log('getMentors final result:', result);
-    return result;
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: query?.page || 1,
+        limit: query?.limit || response.length
+      };
+    }
+    return response;
   },
 
   async getMentor(mentorId: string): Promise<Mentor> {

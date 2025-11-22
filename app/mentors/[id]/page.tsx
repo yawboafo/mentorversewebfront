@@ -25,12 +25,12 @@ export default function MentorDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [mentorData, contentData] = await Promise.all([
+        const [mentorData, contentResponse] = await Promise.all([
           mentorsApi.getMentor(mentorId),
           contentApi.getContent({ mentor_id: mentorId }),
         ]);
         setMentor(mentorData);
-        setContent(contentData);
+        setContent(contentResponse.data);
       } catch (error) {
         console.error('Failed to fetch mentor:', error);
       } finally {

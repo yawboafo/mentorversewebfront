@@ -8,10 +8,19 @@ export interface ContentQuery {
   min_price?: number;
   max_price?: number;
   mentor_id?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ContentResponse {
+  data: Content[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export const contentApi = {
-  async getContent(query?: ContentQuery): Promise<Content[]> {
+  async getContent(query?: ContentQuery): Promise<ContentResponse> {
     const params = new URLSearchParams();
     if (query?.q) params.append('q', query.q);
     if (query?.tags) query.tags.forEach(tag => params.append('tags', tag));
@@ -19,17 +28,21 @@ export const contentApi = {
     if (query?.min_price !== undefined) params.append('min_price', query.min_price.toString());
     if (query?.max_price !== undefined) params.append('max_price', query.max_price.toString());
     if (query?.mentor_id) params.append('mentor_id', query.mentor_id);
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
     
     const endpoint = `/content${params.toString() ? `?${params.toString()}` : ''}`;
-    console.log('getContent endpoint:', endpoint);
-    const response = await apiClient.get<Content[] | { data: Content[] }>(endpoint);
-    console.log('getContent raw response:', response);
-    console.log('getContent response type:', typeof response);
-    console.log('getContent is array:', Array.isArray(response));
+    const response = await apiClient.get<Content[] | ContentResponse>(endpoint);
     // Handle both array and paginated response formats
-    const result = Array.isArray(response) ? response : (response.data || []);
-    console.log('getContent final result:', result);
-    return result;
+    if (Array.isArray(response)) {
+      return {
+        data: response,
+        total: response.length,
+        page: query?.page || 1,
+        limit: query?.limit || response.length
+      };
+    }
+    return response;
   },
 
   async getContentById(contentId: string): Promise<Content> {

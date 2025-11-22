@@ -9,41 +9,61 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { contentApi, ContentQuery } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
-import { Search, BookOpen, Play, Clock, Award, TrendingUp, Sparkles } from 'lucide-react';
+import { Search, BookOpen, Play, Clock, Award, TrendingUp, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function ContentPage() {
   const [content, setContent] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [contentType, setContentType] = useState<'all' | 'framework' | 'course'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchContent();
-  }, []);
+  }, [currentPage]);
 
   const fetchContent = async (query?: ContentQuery) => {
     try {
       setIsLoading(true);
-      console.log('Fetching content with query:', query);
-      const data = await contentApi.getContent(query);
-      console.log('Received content data:', data);
-      console.log('Is array:', Array.isArray(data));
-      console.log('Data length:', data?.length);
-      setContent(data || []);
+      const finalQuery: ContentQuery = {
+        ...query,
+        page: query?.page || currentPage,
+        limit: ITEMS_PER_PAGE
+      };
+      
+      const response = await contentApi.getContent(finalQuery);
+      setContent(response.data || []);
+      setTotalItems(response.total || 0);
+      setTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Failed to fetch content:', error);
       setContent([]);
+      setTotalItems(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSearch = () => {
-    const query: ContentQuery = { q: searchQuery };
+    const query: ContentQuery = { 
+      q: searchQuery,
+      page: 1
+    };
     if (contentType !== 'all') {
       query.content_type = contentType;
     }
+    setCurrentPage(1);
     fetchContent(query);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -187,6 +207,64 @@ export default function ContentPage() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-12 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              // Show first page, last page, current page, and pages around current
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="min-w-[40px]"
+                  >
+                    {page}
+                  </Button>
+                );
+              } else if (page === currentPage - 2 || page === currentPage + 2) {
+                return <span key={page} className="px-2">...</span>;
+              }
+              return null;
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Results info */}
+      {!isLoading && content.length > 0 && (
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} {contentType === 'all' ? 'items' : contentType === 'course' ? 'courses' : 'frameworks'}
         </div>
       )}
     </div>
