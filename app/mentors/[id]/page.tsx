@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,16 +11,25 @@ import { Separator } from '@/components/ui/separator';
 import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
-import { User, Globe, Briefcase, Play, MapPin, MessageSquare, Award, Calendar, Video } from 'lucide-react';
+import { User, Globe, Briefcase, Play, MapPin, MessageSquare, Award, Calendar, Video, Check, UserPlus, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/use-auth';
+import { BookAppointmentModal } from '@/components/book-appointment-modal';
+import { toast } from 'sonner';
 
 export default function MentorDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
   const mentorId = params.id as string;
   
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [content, setContent] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +49,69 @@ export default function MentorDetailPage() {
 
     fetchData();
   }, [mentorId]);
+
+  // Check subscription status when user is logged in
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user || !mentorId) return;
+      
+      // Don't check if user is the mentor themselves
+      if (user.id === mentorId) return;
+
+      try {
+        setIsCheckingSubscription(true);
+        const status = await mentorsApi.checkSubscriptionStatus(mentorId);
+        setIsSubscribed(status.is_subscribed);
+      } catch (error) {
+        console.error('Failed to check subscription status:', error);
+      } finally {
+        setIsCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [user, mentorId]);
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      // Redirect to login with return URL
+      const returnUrl = `/mentors/${mentorId}`;
+      router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
+    try {
+      setIsSubscribing(true);
+      await mentorsApi.subscribeMentor(mentorId);
+      setIsSubscribed(true);
+      toast.success(`You're now subscribed to ${mentor?.user.fullName}! 🎉`, {
+        description: 'You can now book appointments and access exclusive content.',
+      });
+    } catch (error: any) {
+      console.error('Failed to subscribe:', error);
+      toast.error('Failed to subscribe', {
+        description: error.message || 'Please try again later.',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    try {
+      setIsSubscribing(true);
+      await mentorsApi.unsubscribeMentor(mentorId);
+      setIsSubscribed(false);
+      toast.success('Unsubscribed successfully');
+    } catch (error: any) {
+      console.error('Failed to unsubscribe:', error);
+      toast.error('Failed to unsubscribe', {
+        description: error.message || 'Please try again later.',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -110,11 +182,76 @@ export default function MentorDetailPage() {
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Book Session
-              </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {/* Subscribe/Subscribed Button */}
+              {user?.id !== mentorId && (
+                <>
+                  {!user ? (
+                    <Button 
+                      size="lg" 
+                      onClick={handleSubscribe}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Login to Subscribe
+                    </Button>
+                  ) : isCheckingSubscription ? (
+                    <Button size="lg" disabled>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking...
+                    </Button>
+                  ) : isSubscribed ? (
+                    <>
+                      <Button 
+                        size="lg" 
+                        variant="secondary"
+                        disabled
+                        className="gap-2"
+                      >
+                        <Check className="h-4 w-4" />
+                        Subscribed
+                      </Button>
+                      <Button 
+                        size="lg"
+                        onClick={() => setShowAppointmentModal(true)}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Book Appointment
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      onClick={handleSubscribe}
+                      disabled={isSubscribing}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      {isSubscribing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Subscribing...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Subscribe to this Mentor
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {isSubscribed && (
+                    <Button 
+                      size="lg"
+                      variant="ghost"
+                      onClick={handleUnsubscribe}
+                      disabled={isSubscribing}
+                    >
+                      Unsubscribe
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -292,6 +429,16 @@ export default function MentorDetailPage() {
           </div>
         )}
       </section>
+
+      {/* Book Appointment Modal */}
+      {mentor && (
+        <BookAppointmentModal
+          isOpen={showAppointmentModal}
+          onClose={() => setShowAppointmentModal(false)}
+          mentorId={mentorId}
+          mentorName={mentor.user.fullName}
+        />
+      )}
     </div>
   );
 }

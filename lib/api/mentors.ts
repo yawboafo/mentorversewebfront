@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Mentor, MentorApplication, MentorDashboard, MenteesResponse, UserMentorsResponse } from './types';
+import type { Mentor, MentorApplication, MentorDashboard, MenteesResponse, UserMentorsResponse, SubscriptionStatus } from './types';
 
 export interface MentorsQuery {
   q?: string;
@@ -127,5 +127,31 @@ export const mentorsApi = {
    */
   async getMyMentors(): Promise<UserMentorsResponse> {
     return apiClient.get<UserMentorsResponse>('/me/mentors');
+  },
+
+  // =============== SUBSCRIPTION API ===============
+  
+  /**
+   * Subscribe to a mentor
+   * @param mentorId - Mentor user ID to subscribe to
+   */
+  async subscribeMentor(mentorId: string): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>(`/mentors/${mentorId}/subscribe`, {});
+  },
+
+  /**
+   * Unsubscribe from a mentor
+   * @param mentorId - Mentor user ID to unsubscribe from
+   */
+  async unsubscribeMentor(mentorId: string): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>(`/mentors/${mentorId}/unsubscribe`, {});
+  },
+
+  /**
+   * Check subscription status with a mentor
+   * @param mentorId - Mentor user ID
+   */
+  async checkSubscriptionStatus(mentorId: string): Promise<{ is_subscribed: boolean; subscribed_at?: string }> {
+    return apiClient.get<{ is_subscribed: boolean; subscribed_at?: string }>(`/mentors/${mentorId}/subscription-status`);
   },
 };

@@ -404,6 +404,12 @@ export interface ContentDraft {
 export type RelationshipType = 'purchase_based' | 'one_on_one' | 'subscription' | 'group_program';
 export type MentorshipStatus = 'active' | 'paused' | 'ended';
 
+// Subscription Types
+export interface SubscriptionStatus {
+  is_subscribed: boolean;
+  subscribed_at?: string;
+}
+
 export interface MenteeDetails {
   mentee: {
     id: string;

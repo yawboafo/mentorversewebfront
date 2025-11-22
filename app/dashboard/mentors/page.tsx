@@ -10,14 +10,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { MentorDetails } from '@/lib/api/types';
-import { Users, Loader2, MapPin, Calendar, BookOpen, Award, ArrowRight, Sparkles, GraduationCap } from 'lucide-react';
+import { Users, Loader2, MapPin, Calendar as CalendarIcon, BookOpen, Award, ArrowRight, Sparkles, GraduationCap } from 'lucide-react';
 import { format } from 'date-fns';
+import { BookAppointmentModal } from '@/components/book-appointment-modal';
 
 export default function MyMentorsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const [mentors, setMentors] = useState<MentorDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedMentorId, setSelectedMentorId] = useState<string | null>(null);
+  const [selectedMentorName, setSelectedMentorName] = useState<string>('');
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -199,14 +203,28 @@ export default function MyMentorsPage() {
                       <span>{mentorship.purchased_content_count} course{mentorship.purchased_content_count !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                      <CalendarIcon className="h-4 w-4" />
                       <span>Since {format(new Date(mentorship.first_connected_at), 'MMM yyyy')}</span>
                     </div>
                   </div>
 
-                  {/* Status & Action */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    {getStatusBadge(mentorship.status)}
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-2 pt-4 border-t">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(mentorship.status)}
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedMentorId(mentor.id);
+                          setSelectedMentorName(mentor.full_name);
+                          setShowAppointmentModal(true);
+                        }}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                      >
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        Book Appointment
+                      </Button>
+                    </div>
                     <Button asChild variant="ghost" size="sm" className="group-hover:bg-purple-500/10">
                       <Link href={`/mentors/${mentor.id}`}>
                         View Profile
@@ -237,6 +255,20 @@ export default function MyMentorsPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Book Appointment Modal */}
+      {selectedMentorId && (
+        <BookAppointmentModal
+          isOpen={showAppointmentModal}
+          onClose={() => {
+            setShowAppointmentModal(false);
+            setSelectedMentorId(null);
+            setSelectedMentorName('');
+          }}
+          mentorId={selectedMentorId}
+          mentorName={selectedMentorName}
+        />
       )}
     </div>
   );

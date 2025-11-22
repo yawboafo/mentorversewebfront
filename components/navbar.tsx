@@ -87,9 +87,10 @@ export function Navbar() {
       // MENTOR - Creator-focused navigation
       return [
         { href: '/mentor/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
+        { href: '/mentor/mentees', label: 'My Mentees', icon: Users },
         { href: '/mentor/content', label: 'My Content', icon: BookOpen },
         { href: '/mentor/content/create', label: 'Create', icon: Plus },
-        { href: '/mentors', label: 'Mentors', icon: Users },
+        { href: '/mentors', label: 'Browse Mentors', icon: Users },
         { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
       ];
     }
@@ -121,7 +122,8 @@ export function Navbar() {
     // Regular user navigation
     const baseLinks = [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/mentors', label: 'Mentors', icon: Users },
+      { href: '/dashboard/mentors', label: 'My Mentors', icon: Users },
+      { href: '/mentors', label: 'Browse Mentors', icon: Users },
       { href: '/content', label: 'Courses', icon: BookOpen },
       { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
     ];
@@ -212,6 +214,12 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
+                        <Link href="/mentor/mentees" className="cursor-pointer">
+                          <Users className="mr-2 h-4 w-4" />
+                          My Mentees
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/mentor/content/create" className="cursor-pointer">
                           <Plus className="mr-2 h-4 w-4" />
                           Create Content
@@ -230,12 +238,20 @@ export function Navbar() {
                   )}
                   
                   {user.role === 'user' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        My Dashboard
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard" className="cursor-pointer">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          My Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/mentors" className="cursor-pointer">
+                          <Users className="mr-2 h-4 w-4" />
+                          My Mentors
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   
                   <DropdownMenuItem asChild>
