@@ -237,12 +237,12 @@ export default function OnboardingPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(1)} className="w-full">
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button onClick={() => setStep(3)} className="w-full">
                       Continue
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(1)} className="w-full">
+                      Back
                     </Button>
                   </div>
                 </div>
@@ -260,16 +260,16 @@ export default function OnboardingPage() {
                       onChange={(e) => setIndividualData({ ...individualData, current_challenges: e.target.value })}
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(2)} className="w-full">
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button
                       onClick={() => setStep(4)}
                       disabled={!individualData.current_challenges.trim()}
                       className="w-full"
                     >
                       Continue
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(2)} className="w-full">
+                      Back
                     </Button>
                   </div>
                 </div>
@@ -294,12 +294,12 @@ export default function OnboardingPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(3)} className="w-full" disabled={isLoading}>
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button onClick={handleIndividualSubmit} className="w-full" disabled={isLoading}>
                       {isLoading ? 'Completing...' : 'Complete Onboarding'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(3)} className="w-full" disabled={isLoading}>
+                      Back
                     </Button>
                   </div>
                 </div>
@@ -369,16 +369,16 @@ export default function OnboardingPage() {
                       required
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(1)} className="w-full">
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button
                       onClick={() => setStep(3)}
                       disabled={!businessData.company_size || !businessData.location}
                       className="w-full"
                     >
                       Continue
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(1)} className="w-full">
+                      Back
                     </Button>
                   </div>
                 </div>
@@ -398,16 +398,16 @@ export default function OnboardingPage() {
                       required
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(2)} className="w-full">
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button
                       onClick={() => setStep(4)}
                       disabled={!businessData.description.trim()}
                       className="w-full"
                     >
                       Continue
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(2)} className="w-full">
+                      Back
                     </Button>
                   </div>
                 </div>
@@ -427,16 +427,16 @@ export default function OnboardingPage() {
                       required
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(3)} className="w-full" disabled={isLoading}>
-                      Back
-                    </Button>
+                  <div className="space-y-2">
                     <Button
                       onClick={handleBusinessSubmit}
                       disabled={!businessData.main_challenge.trim() || isLoading}
                       className="w-full"
                     >
                       {isLoading ? 'Completing...' : 'Complete Onboarding'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setStep(3)} className="w-full" disabled={isLoading}>
+                      Back
                     </Button>
                   </div>
                 </div>
