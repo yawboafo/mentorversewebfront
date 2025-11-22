@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mentorsApi, MentorsQuery } from '@/lib/api/mentors';
 import { Mentor } from '@/lib/api/types';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, Play, MapPin, Verified, Sparkles } from 'lucide-react';
 
 export default function MentorsPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -23,11 +25,7 @@ export default function MentorsPage() {
   const fetchMentors = async (query?: MentorsQuery) => {
     try {
       setIsLoading(true);
-      console.log('Fetching mentors with query:', query);
       const data = await mentorsApi.getMentors(query);
-      console.log('Received mentors data:', data);
-      console.log('Is array:', Array.isArray(data));
-      console.log('Data length:', data?.length);
       setMentors(data || []);
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
@@ -41,19 +39,30 @@ export default function MentorsPage() {
     fetchMentors({ q: searchQuery });
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">Browse Mentors</h1>
-        <p className="text-muted-foreground mb-6">
-          Find expert mentors to guide your growth journey
+        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Meet Your Mentors
+        </h1>
+        <p className="text-lg text-muted-foreground mb-6">
+          Real people. Real stories. Real growth. 🚀
         </p>
         
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search mentors..."
+              placeholder="Search mentors by name, expertise..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -65,50 +74,98 @@ export default function MentorsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4 mb-2" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <Skeleton className="h-64 w-full" />
+              <div className="p-4 space-y-3">
+                <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
+                <Skeleton className="h-8 w-full" />
+              </div>
             </Card>
           ))}
         </div>
       ) : mentors.length === 0 ? (
-        <div className="text-center py-12">
-          <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No mentors found</h3>
+        <div className="text-center py-20">
+          <Users className="h-20 w-20 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h3 className="text-2xl font-semibold mb-2">No mentors found</h3>
           <p className="text-muted-foreground">Try adjusting your search criteria</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {mentors.map((mentor) => (
-            <Card key={mentor.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="line-clamp-1">{mentor.user.fullName}</CardTitle>
-                <CardDescription className="line-clamp-1">{mentor.headline}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {mentor.shortBio}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {mentor.areasOfExpertise?.slice(0, 3).map((area) => (
-                    <Badge key={area} variant="secondary">{area}</Badge>
-                  ))}
+            <Link key={mentor.id} href={`/mentors/${mentor.id}`}>
+              <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-purple-200 dark:hover:border-purple-800">
+                {/* Profile Image Section */}
+                <div className="relative h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Avatar className="h-32 w-32 border-4 border-white dark:border-gray-800 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <AvatarImage 
+                        src={mentor.user.avatarUrl || mentor.profileImageUrl || undefined} 
+                        alt={mentor.user.fullName}
+                      />
+                      <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                        {getInitials(mentor.user.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  
+                  {/* Video indicator */}
+                  {mentor.introVideoUrl && (
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1 text-xs">
+                      <Play className="h-3 w-3 fill-white" />
+                      <span>Intro</span>
+                    </div>
+                  )}
+                  
+                  {/* Verified badge */}
+                  {mentor.isVerified && (
+                    <div className="absolute top-3 left-3">
+                      <div className="bg-blue-500 text-white p-1 rounded-full">
+                        <Verified className="h-4 w-4 fill-white" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {mentor.experienceYears} years experience
+
+                {/* Content Section */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-lg line-clamp-1 group-hover:text-purple-600 transition-colors">
+                      {mentor.user.fullName}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      {mentor.headline}
+                    </p>
+                  </div>
+
+                  {/* Expertise badges */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {mentor.areasOfExpertise?.slice(0, 3).map((area) => (
+                      <Badge 
+                        key={area} 
+                        variant="secondary" 
+                        className="text-xs px-2 py-0.5"
+                      >
+                        {area}
+                      </Badge>
+                    ))}
+                    {(mentor.areasOfExpertise?.length || 0) > 3 && (
+                      <Badge variant="outline" className="text-xs px-2 py-0.5">
+                        +{(mentor.areasOfExpertise?.length || 0) - 3}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Experience */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="font-medium">{mentor.experienceYears} years experience</span>
+                  </div>
                 </div>
-                <Button asChild className="w-full">
-                  <Link href={`/mentors/${mentor.id}`}>View Profile</Link>
-                </Button>
-              </CardContent>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

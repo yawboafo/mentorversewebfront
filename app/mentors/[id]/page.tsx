@@ -11,7 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
-import { User, Globe, Briefcase } from 'lucide-react';
+import { User, Globe, Briefcase, Play, MapPin, MessageSquare, Award, Calendar, Video } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 export default function MentorDetailPage() {
   const params = useParams();
@@ -61,109 +62,232 @@ export default function MentorDetailPage() {
     );
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Mentor Header */}
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-3xl mb-2">{mentor.user.fullName}</CardTitle>
-              <CardDescription className="text-lg">{mentor.headline}</CardDescription>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Hero Section with Profile Image and Video */}
+      <Card className="mb-8 overflow-hidden">
+        <div className="relative h-64 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
+          {/* Profile Avatar */}
+          <div className="absolute -bottom-16 left-8 z-10">
+            <Avatar className="h-32 w-32 border-4 border-white dark:border-gray-900 shadow-2xl">
+              <AvatarImage 
+                src={mentor.user.avatarUrl || mentor.profileImageUrl || undefined} 
+                alt={mentor.user.fullName}
+              />
+              <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                {getInitials(mentor.user.fullName)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+        
+        <CardContent className="pt-20 pb-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">{mentor.user.fullName}</h1>
+              <p className="text-lg text-muted-foreground mb-4">{mentor.headline}</p>
+              
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Briefcase className="h-3 w-3" />
+                  {mentor.experienceYears} years exp.
+                </Badge>
+                {mentor.isVerified && (
+                  <Badge variant="default" className="bg-blue-500">
+                    <Award className="h-3 w-3 mr-1" />
+                    Verified
+                  </Badge>
+                )}
+              </div>
             </div>
-            <Badge variant="secondary">
-              <Briefcase className="h-4 w-4 mr-1" />
-              {mentor.experienceYears} years
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-2">About</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{mentor.longBio}</p>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-semibold mb-2">Areas of Expertise</h3>
-            <div className="flex flex-wrap gap-2">
-              {mentor.areasOfExpertise?.map((area) => (
-                <Badge key={area}>{area}</Badge>
-              ))}
+            
+            <div className="flex gap-2">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Book Session
+              </Button>
             </div>
           </div>
+
+          {/* Intro Video */}
+          {mentor.introVideoUrl && (
+            <Card className="mb-6 overflow-hidden">
+              <div className="aspect-video bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-600 text-white mb-3">
+                    <Play className="h-8 w-8 fill-white" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Watch intro video</p>
+                  <p className="text-xs text-muted-foreground mt-1">{mentor.introVideoUrl}</p>
+                </div>
+              </div>
+            </Card>
+          )}
           
-          <Separator />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* About Section */}
+          <div className="space-y-6">
             <div>
-              <h3 className="font-semibold mb-2">Languages</h3>
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <User className="h-5 w-5" />
+                About {mentor.user.fullName}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                {mentor.longBio}
+              </p>
+            </div>
+            
+            <Separator />
+            
+            {/* Expertise */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Areas of Expertise
+              </h3>
               <div className="flex flex-wrap gap-2">
-                {mentor.languages?.map((lang) => (
-                  <Badge key={lang} variant="outline">
-                    <Globe className="h-3 w-3 mr-1" />
-                    {lang}
+                {mentor.areasOfExpertise?.map((area) => (
+                  <Badge key={area} className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                    {area}
                   </Badge>
                 ))}
               </div>
             </div>
             
-            {Object.keys(mentor.socialLinks || {}).length > 0 && (
+            <Separator />
+            
+            {/* Languages & Social */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold mb-2">Social Links</h3>
-                <div className="space-y-2">
-                  {Object.entries(mentor.socialLinks).map(([platform, url]) => (
-                    <a
-                      key={platform}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline block"
-                    >
-                      {platform}
-                    </a>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Languages
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {mentor.languages?.map((lang) => (
+                    <Badge key={lang} variant="outline">
+                      {lang}
+                    </Badge>
                   ))}
                 </div>
               </div>
-            )}
+              
+              {Object.keys(mentor.socialLinks || {}).length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3">Connect</h3>
+                  <div className="space-y-2">
+                    {Object.entries(mentor.socialLinks).map(([platform, url]) => (
+                      <a
+                        key={platform}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline block capitalize"
+                      >
+                        {platform}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Mentor's Content */}
       <section>
-        <h2 className="text-2xl font-bold mb-6">Courses & Frameworks by {mentor.full_name}</h2>
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+          <Video className="h-6 w-6" />
+          Courses & Frameworks by {mentor.user.fullName}
+        </h2>
         
         {content.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">This mentor hasn't published any content yet.</p>
+          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-dashed">
+            <CardContent className="py-16 text-center">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground text-lg">This mentor hasn't published any content yet.</p>
+              <p className="text-sm text-muted-foreground mt-2">Check back soon for new courses!</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {content.map((item) => (
-              <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <Badge variant="secondary">{item.content_type}</Badge>
-                    <span className="text-sm font-semibold">${item.price}</span>
+              <Link key={item.id} href={`/content/${item.id}`}>
+                <Card className="group h-full overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-purple-200 dark:hover:border-purple-800">
+                  {/* Cover Image/Video */}
+                  <div className="relative h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {item.mediaType === 'video' ? (
+                        <div className="text-white">
+                          <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Play className="h-8 w-8 fill-white" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-6xl opacity-20">📚</div>
+                      )}
+                    </div>
+                    
+                    {/* Price badge */}
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold text-sm">
+                      ${item.price}
+                    </div>
+                    
+                    {/* Type badge */}
+                    <div className="absolute top-3 left-3">
+                      <Badge className="bg-purple-600 hover:bg-purple-700">
+                        {item.contentType}
+                      </Badge>
+                    </div>
                   </div>
-                  <CardTitle className="mt-2 line-clamp-2">{item.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">{item.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {item.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
-                  </div>
-                  <Button asChild className="w-full">
-                    <Link href={`/content/${item.id}`}>View Details</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+
+                  <CardContent className="p-4 space-y-3">
+                    <div>
+                      <h3 className="font-bold text-lg line-clamp-2 group-hover:text-purple-600 transition-colors mb-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags.slice(0, 3).map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {item.tags.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{item.tags.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+                      {item.estimatedDuration && (
+                        <span>{item.estimatedDuration}</span>
+                      )}
+                      {item.level && (
+                        <Badge variant="secondary" className="text-xs">
+                          {item.level}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
