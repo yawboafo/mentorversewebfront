@@ -48,6 +48,8 @@ export const authApi = {
       if (response.refresh_token) {
         localStorage.setItem('refresh_token', response.refresh_token);
       }
+      // Store user data for immediate access
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
     
     return response;
@@ -75,6 +77,8 @@ export const authApi = {
       if (response.refresh_token) {
         localStorage.setItem('refresh_token', response.refresh_token);
       }
+      // Store user data for immediate access
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
     
     return response;
@@ -128,6 +132,8 @@ export const authApi = {
       if (response.refresh_token) {
         localStorage.setItem('refresh_token', response.refresh_token);
       }
+      // Store user data for immediate access
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
     
     return response;
@@ -151,6 +157,8 @@ export const authApi = {
       if (response.refresh_token) {
         localStorage.setItem('refresh_token', response.refresh_token);
       }
+      // Store user data for immediate access
+      localStorage.setItem('user', JSON.stringify(response.user));
     }
     
     return response;
@@ -169,6 +177,7 @@ export const authApi = {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('oauth_intent');
+    localStorage.removeItem('user');
     window.location.href = '/auth/login';
   },
 

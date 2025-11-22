@@ -54,6 +54,35 @@ export default function OnboardingPage() {
   useEffect(() => {
     console.log('📋 Onboarding page - user:', user?.email, 'role:', user?.role, 'onboarding_completed:', user?.onboarding_completed, 'authLoading:', authLoading);
     
+    // Check localStorage for fresh user data (in case context is still loading)
+    const storedUserData = localStorage.getItem('user');
+    if (storedUserData) {
+      try {
+        const storedUser = JSON.parse(storedUserData);
+        console.log('💾 Stored user data:', storedUser.email, 'role:', storedUser.role);
+        
+        // Admin and mentor roles don't need onboarding
+        if (storedUser.role === 'admin') {
+          console.log('👑 Admin detected (from storage), redirecting to admin panel');
+          router.push('/admin');
+          return;
+        }
+        if (storedUser.role === 'mentor') {
+          console.log('🎓 Mentor detected (from storage), redirecting to mentor dashboard');
+          router.push('/mentor/dashboard');
+          return;
+        }
+        // Regular users who completed onboarding
+        if (storedUser.onboarding_completed) {
+          console.log('✅ Onboarding already completed (from storage), redirecting to dashboard');
+          router.push('/dashboard');
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing stored user data:', e);
+      }
+    }
+    
     if (user) {
       // Admin and mentor roles don't need onboarding
       if (user.role === 'admin') {
