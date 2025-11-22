@@ -55,8 +55,10 @@ export default function OnboardingPage() {
     console.log('📋 Onboarding page - user:', user?.email, 'onboarding_completed:', user?.onboarding_completed, 'authLoading:', authLoading);
     
     if (user && user.onboarding_completed) {
-      console.log('✅ Onboarding already completed, redirecting to dashboard');
-      router.push('/dashboard');
+      console.log('✅ Onboarding already completed, redirecting to role-specific dashboard');
+      const redirectPath = user.role === 'mentor' ? '/mentor/dashboard' : 
+                          user.role === 'admin' ? '/admin' : '/dashboard';
+      router.push(redirectPath);
     }
   }, [user, router, authLoading]);
 
@@ -101,8 +103,11 @@ export default function OnboardingPage() {
       
       toast.success('Onboarding completed! 🎉');
       
-      // Navigate to dashboard - no reload needed
-      router.push('/dashboard');
+      // Navigate to role-specific dashboard
+      const redirectPath = result.user.role === 'mentor' ? '/mentor/dashboard' : 
+                          result.user.role === 'admin' ? '/admin' : '/dashboard';
+      console.log('🚀 Redirecting to:', redirectPath);
+      router.push(redirectPath);
     } catch (err: any) {
       console.error('❌ Onboarding error:', err);
       setError(err.message || 'Failed to complete onboarding');
@@ -127,8 +132,11 @@ export default function OnboardingPage() {
       
       toast.success('Onboarding completed! 🎉');
       
-      // Navigate to dashboard - no reload needed
-      router.push('/dashboard');
+      // Navigate to role-specific dashboard
+      const redirectPath = result.user.role === 'mentor' ? '/mentor/dashboard' : 
+                          result.user.role === 'admin' ? '/admin' : '/dashboard';
+      console.log('🚀 Redirecting to:', redirectPath);
+      router.push(redirectPath);
     } catch (err: any) {
       console.error('❌ Onboarding error:', err);
       setError(err.message || 'Failed to complete onboarding');
