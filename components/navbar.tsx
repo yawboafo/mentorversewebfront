@@ -35,7 +35,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/mentors', label: 'Find Mentors' },
     { href: '/content', label: 'Courses' },
-    { href: '/mentor/apply', label: 'Become a Mentor' },
+    { href: '/mentor/join', label: 'Become a Mentor' },
   ];
 
   return (

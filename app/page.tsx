@@ -1451,7 +1451,7 @@ export default function HomePage() {
               whileTap={{ scale: 0.95 }}
             >
               <Button size="lg" className="text-lg px-10 py-7 h-auto rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-xl font-bold group animate-glow-intense" asChild>
-                <Link href="/mentor/apply">
+                <Link href="/mentor/join">
                   Start sharing <motion.span 
                     className="inline-block ml-2"
                     animate={{ x: [0, 5, 0] }}
