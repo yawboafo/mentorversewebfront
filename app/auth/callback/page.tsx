@@ -51,7 +51,20 @@ function CallbackHandler() {
             if (user.role === 'admin') {
               router.push('/admin');
             } else if (user.role === 'mentor') {
-              router.push('/mentor/dashboard');
+              // Check if mentor has completed their profile/application
+              try {
+                const { mentorsApi } = await import('@/lib/api/mentors');
+                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+                if (!mentorStatus.hasApplication) {
+                  router.push('/mentor/apply');
+                } else if (mentorStatus.status === 'pending') {
+                  router.push('/mentor/pending');
+                } else {
+                  router.push('/mentor/dashboard');
+                }
+              } catch (err) {
+                router.push('/mentor/apply');
+              }
             } else if (!user.onboarding_completed) {
               router.push('/onboarding');
             } else if (user.role === 'user') {
@@ -93,7 +106,20 @@ function CallbackHandler() {
             if (response.user.role === 'admin') {
               router.push('/admin');
             } else if (response.user.role === 'mentor') {
-              router.push('/mentor/dashboard');
+              // Check if mentor has completed their profile/application
+              try {
+                const { mentorsApi } = await import('@/lib/api/mentors');
+                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+                if (!mentorStatus.hasApplication) {
+                  router.push('/mentor/apply');
+                } else if (mentorStatus.status === 'pending') {
+                  router.push('/mentor/pending');
+                } else {
+                  router.push('/mentor/dashboard');
+                }
+              } catch (err) {
+                router.push('/mentor/apply');
+              }
             } else if (!response.user.onboarding_completed) {
               router.push('/onboarding');
             } else if (response.user.role === 'user') {

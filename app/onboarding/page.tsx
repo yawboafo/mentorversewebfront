@@ -49,9 +49,26 @@ export default function OnboardingPage() {
           return;
         }
         if (storedUser.role === 'mentor') {
-          console.log('🎓 [IMMEDIATE] Mentor detected, blocking and redirecting');
+          console.log('🎓 [IMMEDIATE] Mentor detected, checking application status');
           setShouldBlock(true);
-          router.replace('/mentor/dashboard');
+          // Check if mentor has completed application
+          import('@/lib/api/mentors').then(({ mentorsApi }) => {
+            mentorsApi.checkMentorApplicationStatus().then((status) => {
+              if (!status.hasApplication) {
+                console.log('🎓 Mentor without application, redirecting to apply');
+                router.replace('/mentor/apply');
+              } else if (status.status === 'pending') {
+                console.log('⏳ Mentor application pending');
+                router.replace('/mentor/pending');
+              } else {
+                console.log('🎓 Approved mentor, redirecting to dashboard');
+                router.replace('/mentor/dashboard');
+              }
+            }).catch(() => {
+              console.log('🎓 Mentor check failed, redirecting to apply');
+              router.replace('/mentor/apply');
+            });
+          });
           return;
         }
         if (storedUser.onboarding_completed) {

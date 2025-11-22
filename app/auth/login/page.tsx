@@ -55,8 +55,24 @@ export default function LoginPage() {
         redirectPath = '/admin';
         console.log('👑 Admin user, redirecting to admin panel');
       } else if (response.user.role === 'mentor') {
-        redirectPath = '/mentor/dashboard';
-        console.log('🎓 Mentor user, redirecting to mentor dashboard');
+        // Check if mentor has completed their profile/application
+        try {
+          const { mentorsApi } = await import('@/lib/api/mentors');
+          const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+          if (!mentorStatus.hasApplication) {
+            redirectPath = '/mentor/apply';
+            console.log('🎓 Mentor without application, redirecting to apply page');
+          } else if (mentorStatus.status === 'pending') {
+            redirectPath = '/mentor/pending';
+            console.log('⏳ Mentor application pending');
+          } else {
+            redirectPath = '/mentor/dashboard';
+            console.log('🎓 Approved mentor, redirecting to dashboard');
+          }
+        } catch (err) {
+          redirectPath = '/mentor/apply';
+          console.log('🎓 Mentor check failed, redirecting to apply page');
+        }
       } else if (!response.user.onboarding_completed) {
         // Regular users need onboarding
         redirectPath = '/onboarding';
