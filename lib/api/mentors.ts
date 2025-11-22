@@ -123,10 +123,10 @@ export const mentorsApi = {
   },
 
   /**
-   * Get current user's mentors (mentors they've purchased content from)
+   * Get current user's mentors (subscribed mentors)
    */
   async getMyMentors(): Promise<UserMentorsResponse> {
-    return apiClient.get<UserMentorsResponse>('/me/mentors');
+    return apiClient.get<UserMentorsResponse>('/users/me/subscriptions');
   },
 
   // =============== SUBSCRIPTION API ===============
