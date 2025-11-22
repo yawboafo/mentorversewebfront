@@ -43,12 +43,30 @@ export const authApi = {
     return apiClient.get<User>('/me');
   },
 
+  async refresh(refreshToken: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/auth/refresh', {
+      refreshToken,
+    });
+    
+    if (response.access_token) {
+      localStorage.setItem('access_token', response.access_token);
+      if (response.refresh_token) {
+        localStorage.setItem('refresh_token', response.refresh_token);
+      }
+    }
+    
+    return response;
+  },
+
   async getOAuthUrl(provider: string, intent: 'user' | 'mentor'): Promise<{ url: string }> {
-    return apiClient.get<{ url: string }>(`/auth/oauth/${provider}/url?intent=${intent}`);
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '';
+    return apiClient.get<{ url: string }>(`/auth/oauth/${provider}/url?intent=${intent}&redirect=${encodeURIComponent(redirectUrl)}`);
   },
 
   async handleOAuthCallback(code: string, state: string): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/oauth/callback', {
+    // Extract provider from state or URL if needed
+    // For now, we'll let the backend handle the routing
+    const response = await apiClient.post<LoginResponse>('/auth/oauth/google/callback', {
       code,
       state,
     });
@@ -63,9 +81,19 @@ export const authApi = {
     return response;
   },
 
+  async logoutApi(): Promise<void> {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      // Continue with local logout even if API call fails
+    }
+  },
+
   logout() {
+    this.logoutApi(); // Fire and forget
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('oauth_intent');
     window.location.href = '/auth/login';
   },
 

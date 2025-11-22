@@ -20,8 +20,16 @@ export const mentorsApi = {
     return apiClient.get<Mentor>(`/mentors/${mentorId}`);
   },
 
-  async applyToBecomeMentor(data: MentorApplication): Promise<void> {
-    return apiClient.post('/mentor/apply', data);
+  async applyToBecomeMentor(data: MentorApplication): Promise<Mentor> {
+    return apiClient.post<Mentor>('/mentor/apply', data);
+  },
+
+  async getCurrentMentorProfile(): Promise<Mentor> {
+    return apiClient.get<Mentor>('/mentor/me');
+  },
+
+  async updateCurrentMentorProfile(data: Partial<MentorApplication>): Promise<Mentor> {
+    return apiClient.patch<Mentor>('/mentor/me', data);
   },
 
   async getMentorDashboard(): Promise<MentorDashboard> {

@@ -19,45 +19,79 @@ function CallbackHandler() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get OAuth callback parameters
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
+        // Check for errors from OAuth provider
         const errorParam = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
 
-        // Check for errors from OAuth provider
         if (errorParam) {
           throw new Error(errorDescription || `OAuth error: ${errorParam}`);
         }
 
-        if (!code || !state) {
-          throw new Error('Missing required OAuth parameters');
+        // Check if backend already redirected with tokens (direct flow)
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const intent = searchParams.get('intent');
+
+        if (accessToken) {
+          // Backend already processed OAuth and redirected with tokens
+          localStorage.setItem('access_token', accessToken);
+          if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+          }
+          localStorage.removeItem('oauth_intent');
+
+          // Get user info
+          const user = await authApi.getCurrentUser();
+
+          setStatus('success');
+
+          // Wait a moment to show success message
+          setTimeout(() => {
+            // Redirect based on role and onboarding status
+            if (!user.onboarding_completed) {
+              router.push('/onboarding');
+            } else if (user.role === 'mentor') {
+              router.push('/mentor/dashboard');
+            } else if (user.role === 'admin') {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/dashboard');
+            }
+          }, 1500);
+          return;
         }
 
-        // Get stored intent
-        const intent = localStorage.getItem('oauth_intent') || 'user';
+        // Fallback: Handle code/state flow (if backend doesn't redirect directly)
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
 
-        // Exchange code for tokens
-        const response = await authApi.handleOAuthCallback(code, state);
+        if (code && state) {
+          // Exchange code for tokens
+          const response = await authApi.handleOAuthCallback(code, state);
 
-        // Clear stored intent
-        localStorage.removeItem('oauth_intent');
+          // Clear stored intent
+          localStorage.removeItem('oauth_intent');
 
-        setStatus('success');
+          setStatus('success');
 
-        // Wait a moment to show success message
-        setTimeout(() => {
-          // Redirect based on role and onboarding status
-          if (!response.user.onboarding_completed) {
-            router.push('/onboarding');
-          } else if (response.user.role === 'mentor') {
-            router.push('/mentor/dashboard');
-          } else if (response.user.role === 'admin') {
-            router.push('/admin/dashboard');
-          } else {
-            router.push('/dashboard');
-          }
-        }, 1500);
+          // Wait a moment to show success message
+          setTimeout(() => {
+            // Redirect based on role and onboarding status
+            if (!response.user.onboarding_completed) {
+              router.push('/onboarding');
+            } else if (response.user.role === 'mentor') {
+              router.push('/mentor/dashboard');
+            } else if (response.user.role === 'admin') {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/dashboard');
+            }
+          }, 1500);
+          return;
+        }
+
+        // No valid parameters
+        throw new Error('Missing required OAuth parameters');
       } catch (err: any) {
         console.error('OAuth callback error:', err);
         setError(err.message || 'Failed to complete authentication. Please try again.');
