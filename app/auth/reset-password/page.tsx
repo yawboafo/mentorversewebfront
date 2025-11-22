@@ -231,7 +231,7 @@ function ResetPasswordForm() {
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 pb-2">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -339,7 +339,7 @@ function ResetPasswordForm() {
               </motion.div>
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4 pb-8">
+            <CardFooter className="flex flex-col space-y-4 pt-6 pb-8">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -108,7 +108,7 @@ export default function LoginPage() {
           </CardHeader>
           
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pb-2">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -184,8 +184,8 @@ export default function LoginPage() {
                 </p>
               </motion.div>
             </CardContent>
-            
-            <CardFooter className="flex flex-col space-y-4 pt-2">
+
+            <CardFooter className="flex flex-col space-y-4 pt-6">
               <motion.div
                 className="w-full"
                 initial={{ opacity: 0, y: 10 }}
