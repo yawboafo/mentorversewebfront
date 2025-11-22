@@ -74,8 +74,20 @@ export const authApi = {
     console.log('📤 Sending to API:', requestBody);
     const backendResponse = await apiClient.post<BackendLoginResponse>('/auth/register', requestBody);
     console.log('✅ Registration response received:', backendResponse);
+    console.log('📦 Backend user object:', {
+      email: backendResponse.user.email,
+      role: backendResponse.user.role,
+      signupIntent: backendResponse.user.signupIntent,
+      mentorStatus: backendResponse.user.mentorStatus,
+    });
     
     const response = transformBackendResponse(backendResponse);
+    console.log('🔄 Transformed response user:', {
+      email: response.user.email,
+      role: response.user.role,
+      signup_intent: response.user.signup_intent,
+      mentor_status: response.user.mentor_status,
+    });
     
     if (response.access_token) {
       localStorage.setItem('access_token', response.access_token);
@@ -83,7 +95,9 @@ export const authApi = {
         localStorage.setItem('refresh_token', response.refresh_token);
       }
       // Store user data for immediate access
-      localStorage.setItem('user', JSON.stringify(response.user));
+      const userToStore = JSON.stringify(response.user);
+      console.log('💾 Storing user in localStorage:', userToStore);
+      localStorage.setItem('user', userToStore);
     }
     
     return response;

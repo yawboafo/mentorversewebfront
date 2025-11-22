@@ -59,6 +59,14 @@ export default function MentorJoinPage() {
     setIsLoading(true);
 
     try {
+      console.log('🎓 Starting mentor registration...');
+      console.log('📋 Registration data:', {
+        full_name: formData.full_name,
+        email: formData.email,
+        account_type: 'individual',
+        signup_intent: 'mentor',
+      });
+      
       // Register as mentor - backend will track signupIntent
       const response = await authApi.register({
         full_name: formData.full_name,
@@ -66,6 +74,15 @@ export default function MentorJoinPage() {
         password: formData.password,
         account_type: 'individual',
         signup_intent: 'mentor',
+      });
+      
+      console.log('✅ Registration successful!');
+      console.log('👤 User data received:', {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        signup_intent: response.user.signup_intent,
+        mentor_status: response.user.mentor_status,
       });
       
       await refreshUser();
