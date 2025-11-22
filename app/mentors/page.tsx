@@ -23,10 +23,15 @@ export default function MentorsPage() {
   const fetchMentors = async (query?: MentorsQuery) => {
     try {
       setIsLoading(true);
+      console.log('Fetching mentors with query:', query);
       const data = await mentorsApi.getMentors(query);
-      setMentors(data);
+      console.log('Received mentors data:', data);
+      console.log('Is array:', Array.isArray(data));
+      console.log('Data length:', data?.length);
+      setMentors(data || []);
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
+      setMentors([]);
     } finally {
       setIsLoading(false);
     }

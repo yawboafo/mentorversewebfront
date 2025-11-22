@@ -13,9 +13,15 @@ export const mentorsApi = {
     if (query?.tags) query.tags.forEach(tag => params.append('tags', tag));
     
     const endpoint = `/mentors${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await apiClient.get<Mentor[] | { results: Mentor[] }>(endpoint);
+    console.log('getMentors endpoint:', endpoint);
+    const response = await apiClient.get<Mentor[] | { data: Mentor[] }>(endpoint);
+    console.log('getMentors raw response:', response);
+    console.log('getMentors response type:', typeof response);
+    console.log('getMentors is array:', Array.isArray(response));
     // Handle both array and paginated response formats
-    return Array.isArray(response) ? response : (response.results || []);
+    const result = Array.isArray(response) ? response : (response.data || []);
+    console.log('getMentors final result:', result);
+    return result;
   },
 
   async getMentor(mentorId: string): Promise<Mentor> {

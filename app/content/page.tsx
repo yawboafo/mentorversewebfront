@@ -24,10 +24,15 @@ export default function ContentPage() {
   const fetchContent = async (query?: ContentQuery) => {
     try {
       setIsLoading(true);
+      console.log('Fetching content with query:', query);
       const data = await contentApi.getContent(query);
-      setContent(data);
+      console.log('Received content data:', data);
+      console.log('Is array:', Array.isArray(data));
+      console.log('Data length:', data?.length);
+      setContent(data || []);
     } catch (error) {
       console.error('Failed to fetch content:', error);
+      setContent([]);
     } finally {
       setIsLoading(false);
     }
