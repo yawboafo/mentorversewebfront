@@ -13,7 +13,9 @@ export const mentorsApi = {
     if (query?.tags) query.tags.forEach(tag => params.append('tags', tag));
     
     const endpoint = `/mentors${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiClient.get<Mentor[]>(endpoint);
+    const response = await apiClient.get<Mentor[] | { results: Mentor[] }>(endpoint);
+    // Handle both array and paginated response formats
+    return Array.isArray(response) ? response : (response.results || []);
   },
 
   async getMentor(mentorId: string): Promise<Mentor> {

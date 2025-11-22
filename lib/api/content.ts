@@ -21,7 +21,9 @@ export const contentApi = {
     if (query?.mentor_id) params.append('mentor_id', query.mentor_id);
     
     const endpoint = `/content${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiClient.get<Content[]>(endpoint);
+    const response = await apiClient.get<Content[] | { results: Content[] }>(endpoint);
+    // Handle both array and paginated response formats
+    return Array.isArray(response) ? response : (response.results || []);
   },
 
   async getContentById(contentId: string): Promise<Content> {
