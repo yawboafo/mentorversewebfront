@@ -1,15 +1,73 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowRight, Users, BookOpen, MessageSquare, Target, TrendingUp, Award, CheckCircle2, Heart, Lightbulb, Trophy, Sparkles } from 'lucide-react';
+import { ArrowRight, Users, BookOpen, MessageSquare, Target, TrendingUp, Award, CheckCircle2, Heart, Lightbulb, Trophy, Sparkles, ChevronLeft, ChevronRight, Play, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { mentorsApi } from '@/lib/api/mentors';
+import { contentApi } from '@/lib/api/content';
+import { Mentor, Content } from '@/lib/api/types';
 
 export default function HomePage() {
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [courses, setCourses] = useState<Content[]>([]);
+  const [mentorsPage, setMentorsPage] = useState(1);
+  const [coursesPage, setCoursesPage] = useState(1);
+  const [mentorsTotalPages, setMentorsTotalPages] = useState(1);
+  const [coursesTotalPages, setCoursesTotalPages] = useState(1);
+  const [isLoadingMentors, setIsLoadingMentors] = useState(true);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
+  const ITEMS_PER_PAGE = 6;
+
+  useEffect(() => {
+    fetchMentors();
+  }, [mentorsPage]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [coursesPage]);
+
+  const fetchMentors = async () => {
+    try {
+      setIsLoadingMentors(true);
+      const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE });
+      setMentors(response.data || []);
+      setMentorsTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
+    } catch (error) {
+      console.error('Failed to fetch mentors:', error);
+    } finally {
+      setIsLoadingMentors(false);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      setIsLoadingCourses(true);
+      const response = await contentApi.getContent({ page: coursesPage, limit: ITEMS_PER_PAGE });
+      setCourses(response.data || []);
+      setCoursesTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
+    } catch (error) {
+      console.error('Failed to fetch courses:', error);
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="flex flex-col">
       {/* Hero Section - Gen-Z Bold */}
@@ -199,86 +257,124 @@ export default function HomePage() {
             </motion.p>
           </motion.div>
           
-          {/* Example Mentor Grid - Prominent Ghanaian Leaders */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
-            {[
-              { name: 'Dr. Kwame Despite', role: 'Media Mogul & Entrepreneur', image: '/mentors/kwame-despite.jpg' },
-              { name: 'Patricia Obo-Nai', role: 'CEO Vodafone Ghana', image: '/mentors/patricia-obo-nai-v2.jpg' },
-              { name: 'Patrick Awuah', role: 'Founder, Ashesi University', image: '/mentors/Patrick_Awuah_(Ashesi).jpg' },
-              { name: 'Alex Bram', role: 'Tech Pioneer & Developer', image: '/mentors/alex-bram.jpg' },
-              { name: 'Sulley Muntari', role: 'Football Legend', image: '/mentors/SulleyMuntari.jpg' },
-              { name: 'Sarkodie', role: 'Music Icon & Entrepreneur', image: '/mentors/sarkodie.jpg' },
-            ].map((mentor, i) => (
-              <motion.div 
-                key={i} 
-                className="flex flex-col items-center text-center group cursor-pointer"
-                initial={{ opacity: 0, y: 50, scale: 0.8 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ 
-                  duration: 0.5, 
-                  delay: i * 0.1,
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 20
-                }}
-                whileHover={{ 
-                  y: -10,
-                  transition: { duration: 0.2 }
-                }}
-              >
-                <motion.div 
-                  className="relative h-36 w-36 mb-5 rounded-full overflow-hidden ring-4 ring-gradient-to-r from-purple-400 via-pink-400 to-orange-400 shadow-soft-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900"
-                  whileHover={{ 
-                    scale: 1.15,
-                    rotate: 5,
-                    boxShadow: "0 20px 60px rgba(168, 85, 247, 0.6)"
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                >
-                  <Image
-                    src={mentor.image}
-                    alt={mentor.name}
-                    fill
-                    className="object-cover"
-                    sizes="144px"
-                    priority={i < 3}
-                  />
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-t from-purple-600/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3"
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
+          {/* Dynamic Mentor Grid */}
+          {isLoadingMentors ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <div className="h-36 w-36 mb-5 rounded-full bg-muted animate-pulse" />
+                  <div className="h-5 w-24 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+              {mentors.map((mentor, i) => (
+                <Link key={mentor.id} href={`/mentors/${mentor.id}`}>
+                  <motion.div 
+                    className="flex flex-col items-center text-center group cursor-pointer"
+                    initial={{ opacity: 0, y: 50, scale: 0.8 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ 
+                      duration: 0.5, 
+                      delay: i * 0.1,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 20
+                    }}
+                    whileHover={{ 
+                      y: -10,
+                      transition: { duration: 0.2 }
+                    }}
                   >
-                    <motion.span
-                      className="text-2xl"
-                      initial={{ y: 10, opacity: 0 }}
-                      whileHover={{ y: 0, opacity: 1 }}
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                    <motion.div 
+                      className="relative h-36 w-36 mb-5 rounded-full overflow-hidden ring-4 ring-gradient-to-r from-purple-400 via-pink-400 to-orange-400 shadow-soft-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900"
+                      whileHover={{ 
+                        scale: 1.15,
+                        rotate: 5,
+                        boxShadow: "0 20px 60px rgba(168, 85, 247, 0.6)"
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
                     >
-                      🔥
-                    </motion.span>
+                      {(mentor.profileImageUrl || mentor.user?.avatarUrl) ? (
+                        <Image
+                          src={mentor.profileImageUrl || mentor.user.avatarUrl}
+                          alt={mentor.user?.fullName || mentor.headline}
+                          fill
+                          className="object-cover"
+                          sizes="144px"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white bg-gradient-to-br from-purple-500 to-pink-500">
+                          {getInitials(mentor.user?.fullName || mentor.headline)}
+                        </div>
+                      )}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-t from-purple-600/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3"
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                      >
+                        <motion.span
+                          className="text-2xl"
+                          initial={{ y: 10, opacity: 0 }}
+                          whileHover={{ y: 0, opacity: 1 }}
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 0.5, ease: "easeInOut" }}
+                        >
+                          🔥
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+                    <motion.h3 
+                      className="font-bold text-lg mb-1"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ delay: i * 0.1 + 0.3 }}
+                    >
+                      {mentor.user?.fullName || mentor.headline}
+                    </motion.h3>
+                    <motion.p 
+                      className="text-sm text-foreground/60 font-medium line-clamp-2"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ delay: i * 0.1 + 0.4 }}
+                    >
+                      {mentor.headline || mentor.areasOfExpertise?.[0] || 'Mentor'}
+                    </motion.p>
                   </motion.div>
-                </motion.div>
-                <motion.h3 
-                  className="font-bold text-lg mb-1"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: i * 0.1 + 0.3 }}
-                >
-                  {mentor.name}
-                </motion.h3>
-                <motion.p 
-                  className="text-sm text-foreground/60 font-medium"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: i * 0.1 + 0.4 }}
-                >
-                  {mentor.role}
-                </motion.p>
-              </motion.div>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Mentors Pagination */}
+          {!isLoadingMentors && mentorsTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMentorsPage(p => Math.max(1, p - 1))}
+                disabled={mentorsPage === 1}
+                className="rounded-full"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium">
+                Page {mentorsPage} of {mentorsTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMentorsPage(p => Math.min(mentorsTotalPages, p + 1))}
+                disabled={mentorsPage === mentorsTotalPages}
+                className="rounded-full"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           
           <motion.p 
             className="text-center text-lg font-semibold text-foreground/60 mb-8"
@@ -305,6 +401,222 @@ export default function HomePage() {
               <Button size="lg" className="rounded-full px-8 py-6 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-xl animate-glow-intense" asChild>
                 <Link href="/mentors">
                   Meet your mentors <motion.span 
+                    className="inline-block ml-2"
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <ArrowRight className="h-5 w-5" />
+                  </motion.span>
+                </Link>
+              </Button>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Featured Courses - Dynamic with Pagination */}
+      <section className="py-24 bg-gradient-to-b from-background to-purple-50/30 dark:to-purple-950/10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-20"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -10 }}
+              whileInView={{ scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            >
+              <Badge className="mb-6 px-5 py-2 text-base font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-lg">
+                <BookOpen className="w-4 h-4 mr-2 inline" />
+                Featured Courses
+              </Badge>
+            </motion.div>
+            <motion.h2 
+              className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
+              Learn the <motion.span 
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              >real playbook</motion.span>
+            </motion.h2>
+            <motion.p 
+              className="text-xl text-foreground/70 max-w-2xl mx-auto font-medium"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+            >
+              Actionable courses from industry leaders
+            </motion.p>
+          </motion.div>
+
+          {/* Dynamic Courses Grid */}
+          {isLoadingCourses ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="h-48 bg-muted animate-pulse" />
+                  <CardHeader>
+                    <div className="h-6 bg-muted animate-pulse rounded mb-2" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-4 bg-muted animate-pulse rounded mb-2" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {courses.map((course, i) => (
+                <Link key={course.id} href={`/content/${course.id}`}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ 
+                      duration: 0.5, 
+                      delay: i * 0.1,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 20
+                    }}
+                    whileHover={{ 
+                      y: -10,
+                      transition: { duration: 0.2 }
+                    }}
+                  >
+                    <Card className="overflow-hidden group cursor-pointer h-full hover:shadow-xl transition-shadow">
+                      {/* Course Thumbnail */}
+                      <div className="relative h-48 bg-gradient-to-br from-blue-500 to-cyan-500 overflow-hidden">
+                        {course.thumbnailUrl ? (
+                          <Image
+                            src={course.thumbnailUrl}
+                            alt={course.title}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-300"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Play className="h-16 w-16 text-white/80" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+
+                      <CardHeader>
+                        <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-blue-600 transition-colors">
+                          {course.title}
+                        </CardTitle>
+                        {course.mentor && (
+                          <CardDescription className="flex items-center gap-2 text-sm">
+                            <Users className="h-4 w-4" />
+                            {course.mentor.fullName}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+
+                      <CardContent>
+                        {/* Tags */}
+                        {course.tags && course.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {course.tags.slice(0, 3).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Price and Duration */}
+                        <div className="flex items-center justify-between text-sm">
+                          {course.price ? (
+                            <span className="font-bold text-lg text-blue-600">
+                              ${course.price}
+                            </span>
+                          ) : (
+                            <span className="font-bold text-lg text-green-600">
+                              Free
+                            </span>
+                          )}
+                          {course.estimatedDuration && (
+                            <span className="flex items-center gap-1 text-foreground/60">
+                              <Clock className="h-4 w-4" />
+                              {course.estimatedDuration}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Courses Pagination */}
+          {!isLoadingCourses && coursesTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCoursesPage(p => Math.max(1, p - 1))}
+                disabled={coursesPage === 1}
+                className="rounded-full"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium">
+                Page {coursesPage} of {coursesTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCoursesPage(p => Math.min(coursesTotalPages, p + 1))}
+                disabled={coursesPage === coursesTotalPages}
+                className="rounded-full"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          <motion.p 
+            className="text-center text-lg font-semibold text-foreground/60 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.8 }}
+          >
+            + more courses added weekly 📚
+          </motion.p>
+
+          <motion.div 
+            className="text-center"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 1, type: "spring", stiffness: 200, damping: 20 }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.08, rotate: 2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            >
+              <Button size="lg" className="rounded-full px-8 py-6 text-base font-bold bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-xl animate-glow-intense" asChild>
+                <Link href="/content">
+                  Browse all courses <motion.span 
                     className="inline-block ml-2"
                     animate={{ x: [0, 5, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity }}

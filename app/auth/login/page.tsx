@@ -37,24 +37,27 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(formData.email, formData.password);
       
-      // Refresh user context
-      await refreshUser();
-      
+      // Show success toast immediately
       toast.success('Welcome back! 🎉');
       
-      // Redirect based on user role and onboarding status
+      // Refresh user context to update auth state
+      await refreshUser();
+      
+      // Determine redirect path based on user role and onboarding status
+      let redirectPath = '/dashboard';
+      
       if (!response.user.onboarding_completed) {
-        router.push('/onboarding');
+        redirectPath = '/onboarding';
       } else if (response.user.role === 'mentor') {
-        router.push('/mentor/dashboard');
+        redirectPath = '/mentor/dashboard';
       } else if (response.user.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
+        redirectPath = '/admin';
       }
+      
+      // Use window.location for reliable navigation after login
+      window.location.href = redirectPath;
     } catch (err: any) {
       setError(err.message || 'Failed to login. Please check your credentials.');
-    } finally {
       setIsLoading(false);
     }
   };

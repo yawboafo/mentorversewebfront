@@ -1,16 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './use-auth';
 
 export function useRequireAuth(redirectTo: string = '/auth/login') {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Only redirect once if user is not authenticated after loading completes
+    if (!isLoading && !user && !hasRedirected.current) {
+      hasRedirected.current = true;
       router.push(redirectTo);
+    }
+    
+    // Reset redirect flag when user becomes authenticated
+    if (user) {
+      hasRedirected.current = false;
     }
   }, [user, isLoading, router, redirectTo]);
 
