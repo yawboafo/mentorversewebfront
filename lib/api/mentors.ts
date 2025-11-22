@@ -42,7 +42,19 @@ export const mentorsApi = {
   },
 
   async applyToBecomeMentor(data: MentorApplication): Promise<Mentor> {
-    return apiClient.post<Mentor>('/mentor/apply', data);
+    // Transform snake_case to camelCase for backend
+    const requestBody = {
+      headline: data.headline,
+      shortBio: data.short_bio,
+      longBio: data.long_bio,
+      areasOfExpertise: data.areas_of_expertise,
+      experienceYears: data.experience_years,
+      languages: data.languages,
+      socialLinks: data.social_links
+    };
+    
+    console.log('📤 Mentor application request:', requestBody);
+    return apiClient.post<Mentor>('/mentor/apply', requestBody);
   },
 
   async getCurrentMentorProfile(): Promise<Mentor> {

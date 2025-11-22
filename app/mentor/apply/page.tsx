@@ -100,19 +100,47 @@ export default function MentorApplyPage() {
     e.preventDefault();
     setError('');
 
+    // Validation
+    if (!formData.headline.trim()) {
+      setError('Please provide a headline');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (!formData.short_bio.trim()) {
+      setError('Please provide a short bio');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (!formData.long_bio.trim()) {
+      setError('Please provide a detailed bio');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (formData.experience_years <= 0) {
+      setError('Please specify your years of experience');
+      setCurrentStep(1);
+      return;
+    }
+
     if (formData.areas_of_expertise.length === 0) {
       setError('Please select at least one area of expertise');
+      setCurrentStep(2);
       return;
     }
 
     if (formData.languages.length === 0) {
       setError('Please select at least one language');
+      setCurrentStep(2);
       return;
     }
 
     setIsLoading(true);
 
     try {
+      console.log('📝 Submitting mentor application:', formData);
       await mentorsApi.applyToBecomeMentor(formData);
       toast.success('Application submitted successfully! 🎉');
       
@@ -120,8 +148,10 @@ export default function MentorApplyPage() {
         router.push('/mentor/pending');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to submit application. Please try again.');
-      toast.error('Failed to submit application');
+      console.error('❌ Application error:', err);
+      const errorMessage = err.message || 'Failed to submit application. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

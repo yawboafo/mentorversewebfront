@@ -56,6 +56,18 @@ export default function MentorDashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <Card className="p-12 text-center">
+          <h3 className="text-2xl font-bold mb-2">Error Loading Dashboard</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-8">
@@ -87,7 +99,7 @@ export default function MentorDashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${dashboardData?.total_sales.toLocaleString() || 0}</div>
+            <div className="text-2xl font-bold">${(dashboardData?.total_sales || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">From all content sales</p>
           </CardContent>
         </Card>
@@ -174,11 +186,11 @@ export default function MentorDashboardPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Revenue</span>
-                      <span className="font-semibold">${item.revenue.toLocaleString()}</span>
+                      <span className="font-semibold">${(item.revenue || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Price</span>
-                      <span className="font-semibold">${item.content.price}</span>
+                      <span className="font-semibold">${item.content?.price || 0}</span>
                     </div>
                   </div>
                   <Button asChild variant="outline" className="w-full mt-4">
@@ -208,18 +220,18 @@ export default function MentorDashboardPage() {
                 {dashboardData.recent_purchases.map((purchase) => (
                   <div key={purchase.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium">{purchase.content_title}</p>
+                      <p className="font-medium">{purchase.content_title || 'Unknown Content'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(purchase.purchased_at).toLocaleDateString('en-US', {
+                        {purchase.purchased_at ? new Date(purchase.purchased_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
-                        })}
+                        }) : 'N/A'}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">${purchase.amount}</p>
-                      <p className="text-xs text-muted-foreground">{purchase.currency}</p>
+                      <p className="font-semibold">${purchase.amount || 0}</p>
+                      <p className="text-xs text-muted-foreground">{purchase.currency || 'USD'}</p>
                     </div>
                   </div>
                 ))}
