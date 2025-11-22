@@ -36,29 +36,11 @@ export default function HomePage() {
   const fetchMentors = async () => {
     try {
       setIsLoadingMentors(true);
-      const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE * 2 }); // Fetch more to compensate for invalid ones
-      
-      // Filter out any mentors that might cause issues
-      const potentialMentors = (response.data || []).filter(mentor => {
-        return mentor.id && (mentor.user?.fullName || mentor.headline);
-      });
-      
-      // Validate each mentor by attempting to fetch their full profile
-      const validationResults = await Promise.allSettled(
-        potentialMentors.map(mentor => mentorsApi.getMentor(mentor.id))
-      );
-      
-      const validMentors = potentialMentors.filter((_, index) => {
-        return validationResults[index].status === 'fulfilled';
-      }).slice(0, ITEMS_PER_PAGE); // Only take the first ITEMS_PER_PAGE valid ones
-      
-      console.log(`✅ Validated ${validMentors.length} of ${potentialMentors.length} mentors`);
-      
-      setMentors(validMentors);
+      const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE });
+      setMentors(response.data || []);
       setMentorsTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
-      // Set empty array on error to prevent crashes
       setMentors([]);
     } finally {
       setIsLoadingMentors(false);
@@ -290,7 +272,7 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
               {mentors.map((mentor, i) => (
-                <Link key={mentor.id} href={`/mentors/${mentor.id}`} prefetch={false}>
+                <Link key={mentor.id} href={`/mentors/${mentor.user?.id || mentor.userId}`} prefetch={false}>
                   <motion.div 
                     className="flex flex-col items-center text-center group cursor-pointer"
                     initial={{ opacity: 0, y: 50, scale: 0.8 }}

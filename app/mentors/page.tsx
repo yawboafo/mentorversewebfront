@@ -116,7 +116,7 @@ export default function MentorsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {mentors.map((mentor) => (
-            <Link key={mentor.id} href={`/mentors/${mentor.id}`}>
+            <Link key={mentor.id} href={`/mentors/${mentor.user?.id || mentor.userId}`}>
               <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-purple-200 dark:hover:border-purple-800">
                 {/* Profile Image Section */}
                 <div className="relative h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30">
