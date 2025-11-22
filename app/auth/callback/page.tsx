@@ -47,63 +47,22 @@ function CallbackHandler() {
 
           // Wait a moment to show success message
           setTimeout(async () => {
-            // Check role first - admin and mentor skip onboarding
+            // Determine redirect based on role and mentor status
             if (user.role === 'admin') {
               router.push('/admin');
             } else if (user.role === 'mentor') {
-              // Check if mentor has completed their profile/application
-              try {
-                const { mentorsApi } = await import('@/lib/api/mentors');
-                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                if (!mentorStatus.hasApplication) {
-                  router.push('/mentor/apply');
-                } else if (mentorStatus.status === 'pending') {
-                  router.push('/mentor/pending');
-                } else {
-                  router.push('/mentor/dashboard');
-                }
-              } catch (err) {
+              router.push('/mentor/dashboard');
+            } else if (user.signup_intent === 'mentor') {
+              const mentorStatus = user.mentor_status || 'none';
+              if (mentorStatus === 'pending_approval') {
+                router.push('/mentor/pending');
+              } else if (mentorStatus === 'none') {
                 router.push('/mentor/apply');
-              }
-            } else if (user.role === 'user') {
-              // Check if OAuth intent was mentor
-              const oauthIntent = localStorage.getItem('oauth_intent');
-              
-              if (intent === 'mentor' || oauthIntent === 'mentor') {
-                // User registered/logged in through mentor OAuth flow
-                localStorage.setItem('mentor_registration', 'true');
-                localStorage.removeItem('oauth_intent');
-                
-                try {
-                  const { mentorsApi } = await import('@/lib/api/mentors');
-                  const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                  if (!mentorStatus.hasApplication) {
-                    router.push('/mentor/apply');
-                  } else if (mentorStatus.status === 'pending') {
-                    router.push('/mentor/pending');
-                  } else {
-                    localStorage.removeItem('mentor_registration');
-                    router.push('/dashboard');
-                  }
-                } catch (err) {
-                  router.push('/mentor/apply');
-                }
-              } else if (!user.onboarding_completed) {
-                router.push('/onboarding');
               } else {
-                // Check for pending mentor application
-                try {
-                  const { mentorsApi } = await import('@/lib/api/mentors');
-                  const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                  if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
-                    router.push('/mentor/pending');
-                    return;
-                  }
-                } catch (err) {
-                  console.log('No pending mentor application');
-                }
                 router.push('/dashboard');
               }
+            } else if (!user.onboarding_completed) {
+              router.push('/onboarding');
             } else {
               router.push('/dashboard');
             }
@@ -126,63 +85,22 @@ function CallbackHandler() {
 
           // Wait a moment to show success message
           setTimeout(async () => {
-            // Check role first - admin and mentor skip onboarding
+            // Determine redirect based on role and mentor status
             if (response.user.role === 'admin') {
               router.push('/admin');
             } else if (response.user.role === 'mentor') {
-              // Check if mentor has completed their profile/application
-              try {
-                const { mentorsApi } = await import('@/lib/api/mentors');
-                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                if (!mentorStatus.hasApplication) {
-                  router.push('/mentor/apply');
-                } else if (mentorStatus.status === 'pending') {
-                  router.push('/mentor/pending');
-                } else {
-                  router.push('/mentor/dashboard');
-                }
-              } catch (err) {
+              router.push('/mentor/dashboard');
+            } else if (response.user.signup_intent === 'mentor') {
+              const mentorStatus = response.user.mentor_status || 'none';
+              if (mentorStatus === 'pending_approval') {
+                router.push('/mentor/pending');
+              } else if (mentorStatus === 'none') {
                 router.push('/mentor/apply');
-              }
-            } else if (response.user.role === 'user') {
-              // Check if OAuth intent was mentor (stored before redirect)
-              const storedIntent = localStorage.getItem('oauth_intent');
-              
-              if (storedIntent === 'mentor') {
-                // User registered/logged in through mentor OAuth flow
-                localStorage.setItem('mentor_registration', 'true');
-                localStorage.removeItem('oauth_intent');
-                
-                try {
-                  const { mentorsApi } = await import('@/lib/api/mentors');
-                  const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                  if (!mentorStatus.hasApplication) {
-                    router.push('/mentor/apply');
-                  } else if (mentorStatus.status === 'pending') {
-                    router.push('/mentor/pending');
-                  } else {
-                    localStorage.removeItem('mentor_registration');
-                    router.push('/dashboard');
-                  }
-                } catch (err) {
-                  router.push('/mentor/apply');
-                }
-              } else if (!response.user.onboarding_completed) {
-                router.push('/onboarding');
               } else {
-                // Check for pending mentor application
-                try {
-                  const { mentorsApi } = await import('@/lib/api/mentors');
-                  const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-                  if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
-                    router.push('/mentor/pending');
-                    return;
-                  }
-                } catch (err) {
-                  console.log('No pending mentor application');
-                }
                 router.push('/dashboard');
               }
+            } else if (!response.user.onboarding_completed) {
+              router.push('/onboarding');
             } else {
               router.push('/dashboard');
             }

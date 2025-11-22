@@ -1,3 +1,7 @@
+// New Types for Mentor Flow
+export type SignupIntent = 'user' | 'mentor';
+export type MentorStatus = 'none' | 'pending_approval' | 'active' | 'suspended';
+
 // Backend API Response Types (camelCase from backend)
 interface BackendUser {
   id: string;
@@ -7,6 +11,8 @@ interface BackendUser {
   role: 'user' | 'mentor' | 'admin';
   onboardingCompleted?: boolean;
   createdAt: string;
+  signupIntent?: SignupIntent;
+  mentorStatus?: MentorStatus;
 }
 
 interface BackendLoginResponse {
@@ -24,6 +30,8 @@ export interface User {
   role: 'user' | 'mentor' | 'admin';
   onboarding_completed: boolean;
   created_at: string;
+  signup_intent?: SignupIntent;
+  mentor_status?: MentorStatus;
 }
 
 export interface LoginResponse {
@@ -47,6 +55,8 @@ export function transformLoginResponse(backend: BackendLoginResponse): LoginResp
       role: backend.user.role,
       onboarding_completed: backend.user.onboardingCompleted ?? false,
       created_at: backend.user.createdAt,
+      signup_intent: backend.user.signupIntent,
+      mentor_status: backend.user.mentorStatus,
     },
   };
 }

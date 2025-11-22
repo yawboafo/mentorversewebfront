@@ -47,73 +47,45 @@ export default function LoginPage() {
       // Show success toast immediately
       toast.success('Welcome back! 🎉');
       
-      // Determine redirect path based on user role from login response
+      // Determine redirect path based on user role and mentor status
       let redirectPath = '/dashboard';
       
-      // Check role FIRST - admin and mentor skip onboarding
+      // Priority 1: Admin always goes to admin panel
       if (response.user.role === 'admin') {
         redirectPath = '/admin';
         console.log('👑 Admin user, redirecting to admin panel');
-      } else if (response.user.role === 'mentor') {
-        // Check if mentor has completed their profile/application
-        try {
-          const { mentorsApi } = await import('@/lib/api/mentors');
-          const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-          if (!mentorStatus.hasApplication) {
-            redirectPath = '/mentor/apply';
-            console.log('🎓 Mentor without application, redirecting to apply page');
-          } else if (mentorStatus.status === 'pending') {
-            redirectPath = '/mentor/pending';
-            console.log('⏳ Mentor application pending');
-          } else {
-            redirectPath = '/mentor/dashboard';
-            console.log('🎓 Approved mentor, redirecting to dashboard');
-          }
-        } catch (err) {
-          redirectPath = '/mentor/apply';
-          console.log('🎓 Mentor check failed, redirecting to apply page');
-        }
-      } else if (response.user.role === 'user') {
-        // Check if this user registered as a mentor
-        const mentorRegistration = localStorage.getItem('mentor_registration');
+      } 
+      // Priority 2: Approved mentors go to mentor dashboard
+      else if (response.user.role === 'mentor') {
+        redirectPath = '/mentor/dashboard';
+        console.log('🎓 Approved mentor, redirecting to dashboard');
+      }
+      // Priority 3: Users with mentor signup intent
+      else if (response.user.signup_intent === 'mentor') {
+        // Check mentor status to determine routing
+        const mentorStatus = response.user.mentor_status || 'none';
         
-        if (mentorRegistration === 'true') {
-          // User registered through /mentor/join, check application status
-          try {
-            const { mentorsApi } = await import('@/lib/api/mentors');
-            const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-            if (!mentorStatus.hasApplication) {
-              redirectPath = '/mentor/apply';
-              console.log('🎓 Mentor registration, no application - redirecting to apply');
-            } else if (mentorStatus.status === 'pending') {
-              redirectPath = '/mentor/pending';
-              console.log('⏳ Mentor application pending');
-            } else {
-              // Application approved, clear flag
-              localStorage.removeItem('mentor_registration');
-              redirectPath = '/dashboard';
-            }
-          } catch (err) {
-            redirectPath = '/mentor/apply';
-            console.log('🎓 Mentor check failed, redirecting to apply');
-          }
-        } else if (!response.user.onboarding_completed) {
-          // Regular users need onboarding
-          redirectPath = '/onboarding';
-          console.log('⚠️ Onboarding not completed, redirecting to onboarding');
+        if (mentorStatus === 'pending_approval') {
+          redirectPath = '/mentor/pending';
+          console.log('⏳ Mentor application pending approval');
+        } else if (mentorStatus === 'none') {
+          redirectPath = '/mentor/apply';
+          console.log('🎓 Mentor intent, no application yet - redirecting to apply');
         } else {
-          // Check if user has pending mentor application
-          try {
-            const { mentorsApi } = await import('@/lib/api/mentors');
-            const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
-            if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
-              redirectPath = '/mentor/pending';
-              console.log('⏳ Mentor application pending, redirecting to pending page');
-            }
-          } catch (err) {
-            console.log('No pending mentor application');
-          }
+          // Other statuses (suspended, etc.) - go to regular dashboard
+          redirectPath = '/dashboard';
+          console.log('📊 Mentor status:', mentorStatus, '- redirecting to dashboard');
         }
+      }
+      // Priority 4: Regular users without onboarding
+      else if (!response.user.onboarding_completed) {
+        redirectPath = '/onboarding';
+        console.log('⚠️ Onboarding not completed, redirecting to onboarding');
+      }
+      // Priority 5: Regular users with onboarding complete
+      else {
+        redirectPath = '/dashboard';
+        console.log('✅ Regular user, redirecting to dashboard');
       }
       
       console.log('🚀 Navigating to:', redirectPath);

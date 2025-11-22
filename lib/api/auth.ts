@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { LoginResponse, RegisterRequest, User, transformLoginResponse } from './types';
+import type { LoginResponse, RegisterRequest, User, transformLoginResponse, SignupIntent, MentorStatus } from './types';
 
 // Define backend response type (camelCase)
 interface BackendLoginResponse {
@@ -13,6 +13,8 @@ interface BackendLoginResponse {
     role: 'user' | 'mentor' | 'admin';
     onboardingCompleted?: boolean;
     createdAt: string;
+    signupIntent?: SignupIntent;
+    mentorStatus?: MentorStatus;
   };
 }
 
@@ -30,6 +32,8 @@ function transformBackendResponse(backend: BackendLoginResponse): LoginResponse 
       role: backend.user.role,
       onboarding_completed: backend.user.onboardingCompleted ?? false,
       created_at: backend.user.createdAt,
+      signup_intent: backend.user.signupIntent,
+      mentor_status: backend.user.mentorStatus,
     },
   };
 }
@@ -55,7 +59,7 @@ export const authApi = {
     return response;
   },
 
-  async register(data: RegisterRequest): Promise<LoginResponse> {
+  async register(data: RegisterRequest & { signup_intent?: SignupIntent }): Promise<LoginResponse> {
     console.log('📝 Registering with data:', data);
     
     // Transform snake_case to camelCase for backend API
@@ -64,6 +68,7 @@ export const authApi = {
       email: data.email,
       password: data.password,
       accountType: data.account_type,
+      signupIntent: data.signup_intent,
     };
     
     console.log('📤 Sending to API:', requestBody);
@@ -104,6 +109,8 @@ export const authApi = {
       createdAt: string;
       avatarUrl?: string;
       country?: string;
+      signupIntent?: SignupIntent;
+      mentorStatus?: MentorStatus;
     }
     
     const backendUser = await apiClient.get<BackendUser>('/me');
@@ -117,6 +124,8 @@ export const authApi = {
       role: backendUser.role,
       onboarding_completed: backendUser.onboardingCompleted ?? false,
       created_at: backendUser.createdAt,
+      signup_intent: backendUser.signupIntent,
+      mentor_status: backendUser.mentorStatus,
     };
   },
 
@@ -176,7 +185,6 @@ export const authApi = {
     this.logoutApi(); // Fire and forget
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('oauth_intent');
     localStorage.removeItem('user');
     window.location.href = '/auth/login';
   },

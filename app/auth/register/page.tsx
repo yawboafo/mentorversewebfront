@@ -62,6 +62,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         account_type: formData.account_type,
+        signup_intent: 'user',
       });
       
       // Refresh user context

@@ -59,16 +59,14 @@ export default function MentorJoinPage() {
     setIsLoading(true);
 
     try {
-      // Register as mentor (backend will set role to 'user' initially, needs mentor application)
+      // Register as mentor - backend will track signupIntent
       const response = await authApi.register({
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         account_type: 'individual',
+        signup_intent: 'mentor',
       });
-      
-      // Store mentor registration intent
-      localStorage.setItem('mentor_registration', 'true');
       
       await refreshUser();
       toast.success('Account created! Please complete your mentor application 🎉');
