@@ -1,12 +1,47 @@
 import { apiClient } from './client';
-import type { LoginResponse, RegisterRequest, User } from './types';
+import type { LoginResponse, RegisterRequest, User, transformLoginResponse } from './types';
+
+// Define backend response type (camelCase)
+interface BackendLoginResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+    accountType: 'individual' | 'business';
+    role: 'user' | 'mentor' | 'admin';
+    onboardingCompleted?: boolean;
+    createdAt: string;
+  };
+}
+
+// Helper to transform backend response to frontend format
+function transformBackendResponse(backend: BackendLoginResponse): LoginResponse {
+  return {
+    access_token: backend.accessToken,
+    refresh_token: backend.refreshToken,
+    token_type: 'Bearer',
+    user: {
+      id: backend.user.id,
+      email: backend.user.email,
+      full_name: backend.user.fullName,
+      account_type: backend.user.accountType,
+      role: backend.user.role,
+      onboarding_completed: backend.user.onboardingCompleted ?? false,
+      created_at: backend.user.createdAt,
+    },
+  };
+}
 
 export const authApi = {
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/login', {
+    const backendResponse = await apiClient.post<BackendLoginResponse>('/auth/login', {
       email,
       password,
     });
+    
+    const response = transformBackendResponse(backendResponse);
     
     if (response.access_token) {
       localStorage.setItem('access_token', response.access_token);
@@ -20,8 +55,20 @@ export const authApi = {
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
     console.log('📝 Registering with data:', data);
-    const response = await apiClient.post<LoginResponse>('/auth/register', data);
-    console.log('✅ Registration response received');
+    
+    // Transform snake_case to camelCase for backend API
+    const requestBody = {
+      fullName: data.full_name,
+      email: data.email,
+      password: data.password,
+      accountType: data.account_type,
+    };
+    
+    console.log('📤 Sending to API:', requestBody);
+    const backendResponse = await apiClient.post<BackendLoginResponse>('/auth/register', requestBody);
+    console.log('✅ Registration response received:', backendResponse);
+    
+    const response = transformBackendResponse(backendResponse);
     
     if (response.access_token) {
       localStorage.setItem('access_token', response.access_token);
@@ -42,13 +89,39 @@ export const authApi = {
   },
 
   async getCurrentUser(): Promise<User> {
-    return apiClient.get<User>('/me');
+    // Backend returns camelCase
+    interface BackendUser {
+      id: string;
+      email: string;
+      fullName: string;
+      accountType: 'individual' | 'business';
+      role: 'user' | 'mentor' | 'admin';
+      onboardingCompleted?: boolean;
+      createdAt: string;
+      avatarUrl?: string;
+      country?: string;
+    }
+    
+    const backendUser = await apiClient.get<BackendUser>('/me');
+    
+    // Transform to frontend format (snake_case)
+    return {
+      id: backendUser.id,
+      email: backendUser.email,
+      full_name: backendUser.fullName,
+      account_type: backendUser.accountType,
+      role: backendUser.role,
+      onboarding_completed: backendUser.onboardingCompleted ?? false,
+      created_at: backendUser.createdAt,
+    };
   },
 
   async refresh(refreshToken: string): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/refresh', {
+    const backendResponse = await apiClient.post<BackendLoginResponse>('/auth/refresh', {
       refreshToken,
     });
+    
+    const response = transformBackendResponse(backendResponse);
     
     if (response.access_token) {
       localStorage.setItem('access_token', response.access_token);

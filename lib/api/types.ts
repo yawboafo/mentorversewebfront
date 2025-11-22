@@ -1,4 +1,21 @@
-// User & Auth Types
+// Backend API Response Types (camelCase from backend)
+interface BackendUser {
+  id: string;
+  email: string;
+  fullName: string;
+  accountType: 'individual' | 'business';
+  role: 'user' | 'mentor' | 'admin';
+  onboardingCompleted?: boolean;
+  createdAt: string;
+}
+
+interface BackendLoginResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user: BackendUser;
+}
+
+// Frontend Types (snake_case for consistency)
 export interface User {
   id: string;
   email: string;
@@ -14,6 +31,24 @@ export interface LoginResponse {
   refresh_token?: string;
   token_type: string;
   user: User;
+}
+
+// Helper to transform backend response to frontend format
+export function transformLoginResponse(backend: BackendLoginResponse): LoginResponse {
+  return {
+    access_token: backend.accessToken,
+    refresh_token: backend.refreshToken,
+    token_type: 'Bearer',
+    user: {
+      id: backend.user.id,
+      email: backend.user.email,
+      full_name: backend.user.fullName,
+      account_type: backend.user.accountType,
+      role: backend.user.role,
+      onboarding_completed: backend.user.onboardingCompleted ?? false,
+      created_at: backend.user.createdAt,
+    },
+  };
 }
 
 export interface RegisterRequest {
