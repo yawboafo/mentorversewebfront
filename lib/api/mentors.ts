@@ -56,4 +56,16 @@ export const mentorsApi = {
   async getMentorDashboard(): Promise<MentorDashboard> {
     return apiClient.get<MentorDashboard>('/mentor/dashboard');
   },
+
+  async checkMentorApplicationStatus(): Promise<{ hasApplication: boolean; status: 'pending' | 'approved' | 'rejected' | null }> {
+    try {
+      const profile = await apiClient.get<Mentor>('/mentor/me');
+      return { hasApplication: true, status: profile.status === 'active' ? 'approved' : 'pending' };
+    } catch (err: any) {
+      if (err.status === 404) {
+        return { hasApplication: false, status: null };
+      }
+      throw err;
+    }
+  },
 };

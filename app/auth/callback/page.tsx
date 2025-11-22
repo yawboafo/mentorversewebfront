@@ -46,7 +46,7 @@ function CallbackHandler() {
           setStatus('success');
 
           // Wait a moment to show success message
-          setTimeout(() => {
+          setTimeout(async () => {
             // Redirect based on role and onboarding status
             if (!user.onboarding_completed) {
               router.push('/onboarding');
@@ -54,6 +54,19 @@ function CallbackHandler() {
               router.push('/mentor/dashboard');
             } else if (user.role === 'admin') {
               router.push('/admin/dashboard');
+            } else if (user.role === 'user') {
+              // Check for pending mentor application
+              try {
+                const { mentorsApi } = await import('@/lib/api/mentors');
+                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+                if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
+                  router.push('/mentor/pending');
+                  return;
+                }
+              } catch (err) {
+                console.log('No pending mentor application');
+              }
+              router.push('/dashboard');
             } else {
               router.push('/dashboard');
             }
@@ -75,7 +88,7 @@ function CallbackHandler() {
           setStatus('success');
 
           // Wait a moment to show success message
-          setTimeout(() => {
+          setTimeout(async () => {
             // Redirect based on role and onboarding status
             if (!response.user.onboarding_completed) {
               router.push('/onboarding');
@@ -83,6 +96,19 @@ function CallbackHandler() {
               router.push('/mentor/dashboard');
             } else if (response.user.role === 'admin') {
               router.push('/admin/dashboard');
+            } else if (response.user.role === 'user') {
+              // Check for pending mentor application
+              try {
+                const { mentorsApi } = await import('@/lib/api/mentors');
+                const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+                if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
+                  router.push('/mentor/pending');
+                  return;
+                }
+              } catch (err) {
+                console.log('No pending mentor application');
+              }
+              router.push('/dashboard');
             } else {
               router.push('/dashboard');
             }

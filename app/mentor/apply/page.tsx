@@ -117,7 +117,7 @@ export default function MentorApplyPage() {
       toast.success('Application submitted successfully! 🎉');
       
       setTimeout(() => {
-        router.push('/');
+        router.push('/mentor/pending');
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'Failed to submit application. Please try again.');

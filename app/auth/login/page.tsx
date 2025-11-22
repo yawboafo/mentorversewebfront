@@ -62,6 +62,18 @@ export default function LoginPage() {
         redirectPath = '/mentor/dashboard';
       } else if (response.user.role === 'admin') {
         redirectPath = '/admin';
+      } else if (response.user.role === 'user') {
+        // Check if user has pending mentor application
+        try {
+          const { mentorsApi } = await import('@/lib/api/mentors');
+          const mentorStatus = await mentorsApi.checkMentorApplicationStatus();
+          if (mentorStatus.hasApplication && mentorStatus.status === 'pending') {
+            redirectPath = '/mentor/pending';
+            console.log('⏳ Mentor application pending, redirecting to pending page');
+          }
+        } catch (err) {
+          console.log('No pending mentor application');
+        }
       }
       
       console.log('🚀 Navigating to:', redirectPath);
