@@ -26,14 +26,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (hasToken) {
         console.log('📡 Fetching current user from /me...');
         const userData = await authApi.getCurrentUser();
-        console.log('✅ User data received:', userData.email);
+        console.log('✅ User data received:', userData.email, 'role:', userData.role);
+        // Update localStorage to keep role in sync
+        localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
       } else {
         console.log('⚠️ No token found, setting user to null');
+        localStorage.removeItem('user');
         setUser(null);
       }
     } catch (error) {
       console.error('❌ Failed to fetch user:', error);
+      localStorage.removeItem('user');
       setUser(null);
     } finally {
       setIsLoading(false);

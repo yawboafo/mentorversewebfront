@@ -21,8 +21,23 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user && !user.onboarding_completed) {
-      router.push('/onboarding');
+    if (user) {
+      // Redirect admin to admin panel
+      if (user.role === 'admin') {
+        console.log('👑 Admin detected on user dashboard, redirecting to admin panel');
+        router.replace('/admin');
+        return;
+      }
+      // Redirect mentor to mentor dashboard
+      if (user.role === 'mentor') {
+        console.log('🎓 Mentor detected on user dashboard, redirecting to mentor dashboard');
+        router.replace('/mentor/dashboard');
+        return;
+      }
+      // Regular users need onboarding
+      if (!user.onboarding_completed) {
+        router.push('/onboarding');
+      }
     }
   }, [user, router]);
 

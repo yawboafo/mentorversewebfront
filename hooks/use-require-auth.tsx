@@ -32,10 +32,20 @@ export function useRequireAuth(redirectTo: string = '/auth/login') {
 export function useRequireRole(allowedRoles: string[], redirectTo: string = '/dashboard') {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && user && !allowedRoles.includes(user.role)) {
-      router.push(redirectTo);
+    console.log('🔐 useRequireRole - isLoading:', isLoading, 'user:', user?.email || 'none', 'role:', user?.role, 'allowed:', allowedRoles);
+    
+    if (!isLoading && user && !allowedRoles.includes(user.role) && !hasRedirected.current) {
+      console.log('❌ Role', user.role, 'not in allowed roles', allowedRoles, '- redirecting to:', redirectTo);
+      hasRedirected.current = true;
+      router.replace(redirectTo);
+    }
+    
+    // Reset flag if user changes
+    if (user && allowedRoles.includes(user.role)) {
+      hasRedirected.current = false;
     }
   }, [user, isLoading, router, allowedRoles, redirectTo]);
 
