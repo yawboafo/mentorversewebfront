@@ -44,7 +44,7 @@ export default function MentorContentPage() {
     try {
       setIsLoading(true);
       // Fetch content created by current mentor
-      const response = await contentApi.getContent({ mentorId: user?.id });
+      const response = await contentApi.getContent({ mentor_id: user?.id });
       setContents(Array.isArray(response) ? response : response.data || []);
     } catch (err: any) {
       console.error('Failed to load content:', err);
