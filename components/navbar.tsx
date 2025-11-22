@@ -32,10 +32,12 @@ export function Navbar() {
       .slice(0, 2);
   };
 
+  // Filter nav links based on user role
   const navLinks = [
     { href: '/mentors', label: 'Find Mentors' },
     { href: '/content', label: 'Courses' },
-    { href: '/mentor/join', label: 'Become a Mentor' },
+    // Only show "Become a Mentor" if not already a mentor
+    ...(user?.role !== 'mentor' ? [{ href: '/mentor/join', label: 'Become a Mentor' }] : []),
   ];
 
   return (
