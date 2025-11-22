@@ -27,7 +27,7 @@ const GOAL_OPTIONS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useRequireAuth();
-  const { refreshUser } = useAuth();
+  const { setUser } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -84,24 +84,27 @@ export default function OnboardingPage() {
         goals.push(individualData.custom_goal);
       }
 
-      await onboardingApi.submitIndividual({
+      // Submit onboarding and get updated user data
+      const result = await onboardingApi.submitIndividual({
         goals,
         primary_focus: individualData.primary_focus,
         current_challenges: individualData.current_challenges,
         experience_level: individualData.experience_level,
       });
 
-      console.log('✅ Onboarding submitted successfully, refreshing user...');
+      console.log('✅ Onboarding submitted successfully!');
+      console.log('👤 Updated user:', result.user);
+      console.log('📋 Profile created:', result.profile);
       
-      // Refresh user data to update onboarding_completed flag
-      await refreshUser();
+      // Update user state with the returned user object (includes onboarding_completed: true)
+      setUser(result.user);
       
       toast.success('Onboarding completed! 🎉');
       
-      // Use window.location.href for full page reload to ensure auth state is updated
-      await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.href = '/dashboard';
+      // Navigate to dashboard - no reload needed
+      router.push('/dashboard');
     } catch (err: any) {
+      console.error('❌ Onboarding error:', err);
       setError(err.message || 'Failed to complete onboarding');
       setIsLoading(false);
     }
@@ -112,19 +115,22 @@ export default function OnboardingPage() {
     setIsLoading(true);
 
     try {
-      await onboardingApi.submitBusiness(businessData);
+      // Submit onboarding and get updated user data
+      const result = await onboardingApi.submitBusiness(businessData);
       
-      console.log('✅ Business onboarding submitted successfully, refreshing user...');
+      console.log('✅ Business onboarding submitted successfully!');
+      console.log('👤 Updated user:', result.user);
+      console.log('📋 Profile created:', result.profile);
       
-      // Refresh user data to update onboarding_completed flag
-      await refreshUser();
+      // Update user state with the returned user object (includes onboarding_completed: true)
+      setUser(result.user);
       
       toast.success('Onboarding completed! 🎉');
       
-      // Use window.location.href for full page reload to ensure auth state is updated
-      await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.href = '/dashboard';
+      // Navigate to dashboard - no reload needed
+      router.push('/dashboard');
     } catch (err: any) {
+      console.error('❌ Onboarding error:', err);
       setError(err.message || 'Failed to complete onboarding');
       setIsLoading(false);
     }

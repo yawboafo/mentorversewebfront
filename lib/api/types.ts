@@ -78,6 +78,61 @@ export interface BusinessOnboarding {
   location: string;
 }
 
+// Profile Types (Backend Response Format - camelCase)
+interface BackendIndividualProfile {
+  id: string;
+  userId: string;
+  bio?: string;
+  goals: string[];
+  primaryFocusArea: string;
+  currentChallenges: string;
+  experienceLevel: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BackendBusinessProfile {
+  id: string;
+  userId: string;
+  businessName: string;
+  industry: string;
+  companySize: string;
+  website?: string;
+  description: string;
+  mainChallenge: string;
+  monthlyRevenueRange?: string;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendOnboardingResponse {
+  profile: BackendIndividualProfile | BackendBusinessProfile;
+  user: BackendUser;
+}
+
+// Onboarding Response Type (Frontend Format)
+export interface OnboardingResponse {
+  profile: BackendIndividualProfile | BackendBusinessProfile;
+  user: User;
+}
+
+// Helper to transform backend onboarding response to frontend format
+export function transformOnboardingResponse(backend: BackendOnboardingResponse): OnboardingResponse {
+  return {
+    profile: backend.profile,
+    user: {
+      id: backend.user.id,
+      email: backend.user.email,
+      full_name: backend.user.fullName,
+      account_type: backend.user.accountType,
+      role: backend.user.role,
+      onboarding_completed: backend.user.onboardingCompleted ?? true,
+      created_at: backend.user.createdAt,
+    },
+  };
+}
+
 // Dashboard Types
 export interface DashboardData {
   user: User;

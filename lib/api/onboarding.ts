@@ -1,8 +1,9 @@
 import { apiClient } from './client';
-import type { IndividualOnboarding, BusinessOnboarding } from './types';
+import type { IndividualOnboarding, BusinessOnboarding, OnboardingResponse, BackendOnboardingResponse } from './types';
+import { transformOnboardingResponse } from './types';
 
 export const onboardingApi = {
-  async submitIndividual(data: IndividualOnboarding): Promise<void> {
+  async submitIndividual(data: IndividualOnboarding): Promise<OnboardingResponse> {
     // Transform snake_case to camelCase for backend API
     const requestBody = {
       bio: data.bio,
@@ -13,10 +14,14 @@ export const onboardingApi = {
     };
     
     console.log('📤 Sending individual onboarding:', requestBody);
-    return apiClient.post('/me/onboarding/individual', requestBody);
+    const backendResponse = await apiClient.post<BackendOnboardingResponse>('/me/onboarding/individual', requestBody);
+    console.log('✅ Onboarding response received:', backendResponse);
+    
+    // Transform backend response to frontend format
+    return transformOnboardingResponse(backendResponse);
   },
 
-  async submitBusiness(data: BusinessOnboarding): Promise<void> {
+  async submitBusiness(data: BusinessOnboarding): Promise<OnboardingResponse> {
     // Transform snake_case to camelCase for backend API
     const requestBody = {
       businessName: data.business_name,
@@ -30,6 +35,10 @@ export const onboardingApi = {
     };
     
     console.log('📤 Sending business onboarding:', requestBody);
-    return apiClient.post('/me/onboarding/business', requestBody);
+    const backendResponse = await apiClient.post<BackendOnboardingResponse>('/me/onboarding/business', requestBody);
+    console.log('✅ Onboarding response received:', backendResponse);
+    
+    // Transform backend response to frontend format
+    return transformOnboardingResponse(backendResponse);
   },
 };
