@@ -457,7 +457,7 @@ export interface MenteesResponse {
   };
 }
 
-export interface MentorsResponse {
+export interface UserMentorsResponse {
   data: MentorDetails[];
 }
 
