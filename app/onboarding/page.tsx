@@ -71,6 +71,20 @@ export default function OnboardingPage() {
           });
           return;
         }
+        // Check if user registered with mentor intent
+        if (storedUser.signup_intent === 'mentor' || storedUser.signupIntent === 'mentor') {
+          const mentorStatus = storedUser.mentor_status || storedUser.mentorStatus || 'none';
+          console.log('🎓 [IMMEDIATE] Mentor signup intent detected, status:', mentorStatus);
+          setShouldBlock(true);
+          if (mentorStatus === 'pending_approval') {
+            console.log('⏳ Mentor application pending, redirecting');
+            router.replace('/mentor/pending');
+          } else {
+            console.log('📝 Mentor intent, no application - redirecting to apply');
+            router.replace('/mentor/apply');
+          }
+          return;
+        }
         if (storedUser.onboarding_completed) {
           console.log('✅ [IMMEDIATE] Onboarding completed, blocking and redirecting');
           setShouldBlock(true);
@@ -116,6 +130,19 @@ export default function OnboardingPage() {
         if (storedUser.role === 'admin') {
           console.log('👑 Admin detected (from storage), redirecting to admin panel');
           router.push('/admin');
+          return;
+        }
+        // Check if user registered with mentor intent
+        if (storedUser.signup_intent === 'mentor' || storedUser.signupIntent === 'mentor') {
+          const mentorStatus = storedUser.mentor_status || storedUser.mentorStatus || 'none';
+          console.log('🎓 Mentor signup intent detected (second check), status:', mentorStatus);
+          if (mentorStatus === 'pending_approval') {
+            console.log('⏳ Redirecting to pending page');
+            router.push('/mentor/pending');
+          } else {
+            console.log('📝 Redirecting to apply page');
+            router.push('/mentor/apply');
+          }
           return;
         }
         if (storedUser.role === 'mentor') {
