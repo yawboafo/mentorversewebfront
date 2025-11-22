@@ -15,10 +15,12 @@ import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
 import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 import { User, Mail, Lock, ArrowRight, Sparkles, Shield, Briefcase, UserCircle, Check, Users } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
@@ -61,6 +63,9 @@ export default function RegisterPage() {
         password: formData.password,
         account_type: formData.account_type,
       });
+      
+      // Refresh user context
+      await refreshUser();
       
       toast.success('Account created successfully! 🎉');
       

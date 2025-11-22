@@ -18,7 +18,12 @@ export const aiApi = {
     return apiClient.get<AiMessage[]>(`/ai/chat/sessions/${sessionId}/messages`);
   },
 
-  async sendMessage(sessionId: string, data: SendMessageRequest): Promise<AiMessage> {
-    return apiClient.post<AiMessage>(`/ai/chat/sessions/${sessionId}/messages`, data);
+  async sendMessage(sessionId: string, message: string): Promise<AiMessage> {
+    return apiClient.post<AiMessage>(`/ai/chat/sessions/${sessionId}/messages`, { message });
+  },
+
+  async getSessionHistory(sessionId: string): Promise<{ messages: AiMessage[] }> {
+    const messages = await this.getMessages(sessionId);
+    return { messages };
   },
 };

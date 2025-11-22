@@ -225,8 +225,9 @@ export interface AiSessionSummary {
 export interface AiMessage {
   id: string;
   session_id: string;
-  sender: 'user' | 'ai';
+  role: 'user' | 'assistant';
   content: string;
+  response?: string;
   created_at: string;
   meta?: {
     used_content_ids?: string[];

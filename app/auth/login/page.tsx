@@ -14,10 +14,12 @@ import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
 import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 import { Mail, Lock, ArrowRight, Sparkles, Shield, Users } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
@@ -35,6 +37,9 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(formData.email, formData.password);
       
+      // Refresh user context
+      await refreshUser();
+      
       toast.success('Welcome back! 🎉');
       
       // Redirect based on user role and onboarding status
@@ -43,7 +48,7 @@ export default function LoginPage() {
       } else if (response.user.role === 'mentor') {
         router.push('/mentor/dashboard');
       } else if (response.user.role === 'admin') {
-        router.push('/admin/dashboard');
+        router.push('/admin');
       } else {
         router.push('/dashboard');
       }
