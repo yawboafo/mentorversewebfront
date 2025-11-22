@@ -60,6 +60,7 @@ export interface RegisterRequest {
 
 // Onboarding Types
 export interface IndividualOnboarding {
+  bio?: string;
   goals: string[];
   primary_focus: 'career' | 'business' | 'mindset' | 'lifestyle' | 'other';
   current_challenges: string;
@@ -70,8 +71,10 @@ export interface BusinessOnboarding {
   business_name: string;
   industry: string;
   company_size: string;
+  website?: string;
   description: string;
   main_challenge: string;
+  monthly_revenue_range?: string;
   location: string;
 }
 

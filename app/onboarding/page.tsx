@@ -187,13 +187,15 @@ export default function OnboardingPage() {
                       onChange={(e) => setIndividualData({ ...individualData, custom_goal: e.target.value })}
                     />
                   </div>
-                  <Button
-                    onClick={() => setStep(2)}
-                    disabled={individualData.goals.length === 0 && !individualData.custom_goal}
-                    className="w-full"
-                  >
-                    Continue
-                  </Button>
+                  <div className="w-full mt-6">
+                    <Button
+                      onClick={() => setStep(2)}
+                      disabled={individualData.goals.length === 0 && !individualData.custom_goal}
+                      className="w-full"
+                    >
+                      Continue
+                    </Button>
+                  </div>
                 </div>
               )}
 
