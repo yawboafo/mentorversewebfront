@@ -43,14 +43,24 @@ export const mentorsApi = {
 
   async applyToBecomeMentor(data: MentorApplication): Promise<Mentor> {
     // Transform snake_case to camelCase for backend
+    // Filter out empty social links
+    const socialLinks: Record<string, string> = {};
+    if (data.social_links) {
+      Object.entries(data.social_links).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          socialLinks[key] = value.trim();
+        }
+      });
+    }
+
     const requestBody = {
-      headline: data.headline,
-      shortBio: data.short_bio,
-      longBio: data.long_bio,
+      headline: data.headline.trim(),
+      shortBio: data.short_bio.trim(),
+      longBio: data.long_bio.trim(),
       areasOfExpertise: data.areas_of_expertise,
-      experienceYears: data.experience_years,
+      experienceYears: Number(data.experience_years),
       languages: data.languages,
-      socialLinks: data.social_links
+      socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : {}
     };
     
     console.log('📤 Mentor application request:', requestBody);
