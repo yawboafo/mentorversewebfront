@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { MentorDashboard } from '@/lib/api/types';
-import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight } from 'lucide-react';
+import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function MentorDashboardPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
@@ -63,12 +63,20 @@ export default function MentorDashboardPage() {
           <h1 className="text-3xl font-bold">Mentor Dashboard</h1>
           <p className="text-muted-foreground mt-2">Welcome back, {user.full_name}!</p>
         </div>
-        <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600">
-          <Link href="/mentor/content/create">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Content
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/mentor/content/create">
+              <Plus className="h-4 w-4 mr-2" />
+              Manual Create
+            </Link>
+          </Button>
+          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600">
+            <Link href="/mentor/ai-builder">
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Course Builder
+            </Link>
+          </Button>
+        </div>
       </div>
       
       {/* Stats Grid */}
@@ -106,6 +114,42 @@ export default function MentorDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Builder CTA - Show if no content */}
+      {(!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
+        <Card className="mb-12 border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="h-10 w-10 text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold mb-2">
+                  Create Your First Course with AI
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Let our AI assistant help you design a professional course in minutes. 
+                  Just describe what you want to teach, and we'll handle the rest.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                  <Button asChild size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
+                    <Link href="/mentor/ai-builder">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Start with AI Builder
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg">
+                    <Link href="/mentor/content/create">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Manually
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Top Performing Content */}
       {dashboardData?.top_content && dashboardData.top_content.length > 0 && (

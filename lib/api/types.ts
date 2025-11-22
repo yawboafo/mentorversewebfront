@@ -244,6 +244,35 @@ export interface SendMessageRequest {
   content: string;
 }
 
+// AI Content Builder Types
+export interface CourseIdea {
+  title: string;
+  description: string;
+  target_audience: string;
+  problem_it_solves: string;
+  estimated_duration?: string;
+  level?: string;
+  key_topics?: string[];
+}
+
+export interface ContentDraft {
+  id?: string;
+  title: string;
+  description: string;
+  content_type: ContentType;
+  target_audience: string;
+  problem_it_solves: string;
+  learning_outcomes: string[];
+  delivery_modes: DeliveryMode[];
+  estimated_duration: string;
+  level: string;
+  prerequisites?: string;
+  support_model?: string;
+  outline: Module[];
+  tags?: string[];
+  price?: number;
+}
+
 // Admin Types
 export interface MentorApplicationAdmin extends Mentor {
   user_email: string;
