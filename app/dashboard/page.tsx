@@ -119,6 +119,26 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">My Mentors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.mentors_count || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Learning from
+            </p>
+            {(dashboardData?.mentors_count || 0) > 0 && (
+              <Button asChild size="sm" variant="link" className="px-0 mt-2">
+                <Link href="/dashboard/mentors">
+                  View all <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI Sessions</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -127,18 +147,6 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">
               Recent conversations
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button asChild size="sm" variant="outline" className="w-full">
-              <Link href="/ai/chat">Start AI Session</Link>
-            </Button>
           </CardContent>
         </Card>
       </div>

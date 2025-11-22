@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Mentor, MentorApplication, MentorDashboard } from './types';
+import type { Mentor, MentorApplication, MentorDashboard, MenteesResponse, MentorsResponse as UserMentorsResponse } from './types';
 
 export interface MentorsQuery {
   q?: string;
@@ -98,5 +98,34 @@ export const mentorsApi = {
       }
       throw err;
     }
+  },
+
+  // =============== MENTORSHIP API (v2.2.0) ===============
+  
+  /**
+   * Get mentor's mentees (students who purchased their content)
+   * @param query - Optional filters: page, limit, status, search
+   */
+  async getMentees(query?: {
+    page?: number;
+    limit?: number;
+    status?: 'active' | 'paused' | 'ended';
+    search?: string;
+  }): Promise<MenteesResponse> {
+    const params = new URLSearchParams();
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
+    if (query?.status) params.append('status', query.status);
+    if (query?.search) params.append('search', query.search);
+    
+    const endpoint = `/mentor/mentees${params.toString() ? `?${params.toString()}` : ''}`;
+    return apiClient.get<MenteesResponse>(endpoint);
+  },
+
+  /**
+   * Get current user's mentors (mentors they've purchased content from)
+   */
+  async getMyMentors(): Promise<UserMentorsResponse> {
+    return apiClient.get<UserMentorsResponse>('/me/mentors');
   },
 };

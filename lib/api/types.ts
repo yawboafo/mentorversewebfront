@@ -150,6 +150,21 @@ export interface DashboardData {
   recent_content: ContentSummary[];
   suggested_content: ContentSummary[];
   recent_ai_sessions: AiSessionSummary[];
+  mentors_count?: number;
+  top_mentors?: TopMentor[];
+}
+
+export interface TopMentor {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  mentor_profile?: {
+    headline: string;
+    short_bio: string;
+    areas_of_expertise: string[];
+    profile_image_url?: string;
+    is_verified: boolean;
+  };
 }
 
 // Mentor Types
@@ -197,6 +212,15 @@ export interface MentorDashboard {
   total_purchases: number;
   top_content: ContentPerformance[];
   recent_purchases: Purchase[];
+  total_mentees?: number;
+  recent_mentees?: RecentMentee[];
+}
+
+export interface RecentMentee {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  joined_at: string;
 }
 
 // Content Types
@@ -374,6 +398,67 @@ export interface ContentDraft {
   outline: Module[];
   tags?: string[];
   price?: number;
+}
+
+// Mentorship Types (v2.2.0)
+export type RelationshipType = 'purchase_based' | 'one_on_one' | 'subscription' | 'group_program';
+export type MentorshipStatus = 'active' | 'paused' | 'ended';
+
+export interface MenteeDetails {
+  mentee: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+    account_type: 'individual' | 'business';
+    country?: string;
+  };
+  relationship_type: RelationshipType;
+  status: MentorshipStatus;
+  purchased_content: {
+    id: string;
+    title: string;
+    slug: string;
+    thumbnail_url?: string;
+    content_type: ContentType;
+  }[];
+  first_connected_at: string;
+  last_activity_at?: string;
+}
+
+export interface MentorDetails {
+  mentor: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+    country?: string;
+    mentor_profile: {
+      headline: string;
+      short_bio: string;
+      areas_of_expertise: string[];
+      profile_image_url?: string;
+      is_verified: boolean;
+    };
+  };
+  relationship_type: RelationshipType;
+  status: MentorshipStatus;
+  purchased_content_count: number;
+  first_connected_at: string;
+}
+
+export interface MenteesResponse {
+  data: MenteeDetails[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface MentorsResponse {
+  data: MentorDetails[];
 }
 
 // Admin Types

@@ -92,7 +92,7 @@ export default function MentorDashboardPage() {
       </div>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -106,12 +106,30 @@ export default function MentorDashboardPage() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.total_mentees || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Active mentees</p>
+            {(dashboardData?.total_mentees || 0) > 0 && (
+              <Button asChild size="sm" variant="link" className="px-0 mt-2">
+                <Link href="/mentor/mentees">
+                  View all <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{dashboardData?.total_purchases || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">Students enrolled</p>
+            <p className="text-xs text-muted-foreground mt-1">Content purchases</p>
           </CardContent>
         </Card>
         
