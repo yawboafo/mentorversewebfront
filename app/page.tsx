@@ -37,10 +37,18 @@ export default function HomePage() {
     try {
       setIsLoadingMentors(true);
       const response = await mentorsApi.getMentors({ page: mentorsPage, limit: ITEMS_PER_PAGE });
-      setMentors(response.data || []);
+      
+      // Filter out any mentors that might cause issues
+      const validMentors = (response.data || []).filter(mentor => {
+        return mentor.id && (mentor.user?.fullName || mentor.headline);
+      });
+      
+      setMentors(validMentors);
       setMentorsTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
+      // Set empty array on error to prevent crashes
+      setMentors([]);
     } finally {
       setIsLoadingMentors(false);
     }
