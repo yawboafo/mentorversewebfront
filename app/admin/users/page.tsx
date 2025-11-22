@@ -53,6 +53,8 @@ interface AdminUser {
   createdAt: string;
   avatarUrl?: string;
   country?: string;
+  signupIntent?: 'user' | 'mentor';
+  mentorStatus?: 'none' | 'pending_approval' | 'active' | 'suspended';
 }
 
 export default function AdminUsersPage() {
@@ -103,6 +105,8 @@ export default function AdminUsersPage() {
         createdAt: user.created_at || user.createdAt,
         avatarUrl: user.avatar_url || user.avatarUrl,
         country: user.country,
+        signupIntent: user.signup_intent || user.signupIntent,
+        mentorStatus: user.mentor_status || user.mentorStatus,
       }));
       
       setUsers(transformedUsers);
@@ -136,7 +140,7 @@ export default function AdminUsersPage() {
       console.log('✅ User updated:', updatedUser);
       
       // Transform response if needed
-      const transformed = {
+      const transformed: AdminUser = {
         id: updatedUser.id,
         email: updatedUser.email,
         fullName: (updatedUser as any).full_name || updatedUser.fullName,
@@ -146,6 +150,8 @@ export default function AdminUsersPage() {
         createdAt: (updatedUser as any).created_at || updatedUser.createdAt,
         avatarUrl: (updatedUser as any).avatar_url || updatedUser.avatarUrl,
         country: updatedUser.country,
+        signupIntent: (updatedUser as any).signup_intent || (updatedUser as any).signupIntent,
+        mentorStatus: (updatedUser as any).mentor_status || (updatedUser as any).mentorStatus,
       };
       
       toast.success('User updated successfully');
@@ -195,6 +201,27 @@ export default function AdminUsersPage() {
       user: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', label: 'User' },
     };
     const variant = variants[role] || variants.user;
+    return <Badge className={variant.color}>{variant.label}</Badge>;
+  };
+
+  const getSignupIntentBadge = (intent?: string) => {
+    if (!intent) return <Badge variant="outline" className="text-gray-500">Not Set</Badge>;
+    const variants: Record<string, { color: string; label: string }> = {
+      mentor: { color: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200', label: '🎓 Mentor' },
+      user: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: '👤 User' },
+    };
+    const variant = variants[intent] || { color: 'bg-gray-100 text-gray-800', label: intent };
+    return <Badge className={variant.color}>{variant.label}</Badge>;
+  };
+
+  const getMentorStatusBadge = (status?: string) => {
+    if (!status || status === 'none') return <Badge variant="outline" className="text-gray-400">—</Badge>;
+    const variants: Record<string, { color: string; label: string }> = {
+      pending_approval: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: '⏳ Pending' },
+      active: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: '✅ Active' },
+      suspended: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: '🚫 Suspended' },
+    };
+    const variant = variants[status] || { color: 'bg-gray-100 text-gray-800', label: status };
     return <Badge className={variant.color}>{variant.label}</Badge>;
   };
 
@@ -303,6 +330,8 @@ export default function AdminUsersPage() {
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Signup Intent</TableHead>
+                <TableHead>Mentor Status</TableHead>
                 <TableHead>Account Type</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -331,6 +360,8 @@ export default function AdminUsersPage() {
                     </div>
                   </TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
+                  <TableCell>{getSignupIntentBadge(user.signupIntent)}</TableCell>
+                  <TableCell>{getMentorStatusBadge(user.mentorStatus)}</TableCell>
                   <TableCell>{getAccountTypeBadge(user.accountType)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
