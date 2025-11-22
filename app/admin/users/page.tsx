@@ -88,11 +88,28 @@ export default function AdminUsersPage() {
       if (roleFilter !== 'all') {
         params.role = roleFilter;
       }
+      console.log('📥 Fetching users with params:', params);
       const response = await adminApi.getUsers(params);
-      setUsers(response.data);
+      console.log('✅ Users fetched:', response);
+      
+      // Transform snake_case to camelCase if needed
+      const transformedUsers = response.data.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name || user.fullName,
+        role: user.role,
+        accountType: user.account_type || user.accountType,
+        onboardingCompleted: user.onboarding_completed ?? user.onboardingCompleted,
+        createdAt: user.created_at || user.createdAt,
+        avatarUrl: user.avatar_url || user.avatarUrl,
+        country: user.country,
+      }));
+      
+      setUsers(transformedUsers);
       setTotalUsers(response.total);
     } catch (err: any) {
-      toast.error('Failed to load users');
+      console.error('❌ Failed to load users:', err);
+      toast.error(err.message || 'Failed to load users');
     } finally {
       setIsLoading(false);
     }
@@ -114,12 +131,29 @@ export default function AdminUsersPage() {
 
     setProcessingId(selectedUser.id);
     try {
+      console.log('📝 Updating user:', selectedUser.id, editForm);
       const updatedUser = await adminApi.updateUser(selectedUser.id, editForm);
+      console.log('✅ User updated:', updatedUser);
+      
+      // Transform response if needed
+      const transformed = {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        fullName: (updatedUser as any).full_name || updatedUser.fullName,
+        role: updatedUser.role,
+        accountType: (updatedUser as any).account_type || updatedUser.accountType,
+        onboardingCompleted: (updatedUser as any).onboarding_completed ?? updatedUser.onboardingCompleted,
+        createdAt: (updatedUser as any).created_at || updatedUser.createdAt,
+        avatarUrl: (updatedUser as any).avatar_url || updatedUser.avatarUrl,
+        country: updatedUser.country,
+      };
+      
       toast.success('User updated successfully');
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? transformed : u));
       setIsEditDialogOpen(false);
       setSelectedUser(null);
     } catch (err: any) {
+      console.error('❌ Update user error:', err);
       toast.error(err.message || 'Failed to update user');
     } finally {
       setProcessingId(null);
@@ -127,18 +161,28 @@ export default function AdminUsersPage() {
   };
 
   const handleDelete = async (userId: string) => {
+    // Prevent deleting yourself
+    if (currentUser?.id === userId) {
+      toast.error('You cannot delete your own account');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       return;
     }
 
     setProcessingId(userId);
     try {
+      console.log('🗑️ Attempting to delete user:', userId);
       await adminApi.deleteUser(userId);
+      console.log('✅ User deleted successfully');
       toast.success('User deleted successfully');
       setUsers(prev => prev.filter(u => u.id !== userId));
       setTotalUsers(prev => prev - 1);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete user');
+      console.error('❌ Delete user error:', err);
+      const errorMessage = err.message || err.detail || 'Failed to delete user';
+      toast.error(errorMessage);
     } finally {
       setProcessingId(null);
     }

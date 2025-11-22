@@ -39,10 +39,11 @@ export const apiClient = {
 
     try {
       // Log request details for debugging
-      if (options.method === 'POST' || options.method === 'PUT') {
+      if (options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH' || options.method === 'DELETE') {
         console.log('📤 API Request:', {
           method: options.method,
           endpoint,
+          url,
           body: options.body ? JSON.parse(options.body as string) : null
         });
       }
