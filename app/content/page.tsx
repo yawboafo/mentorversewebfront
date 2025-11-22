@@ -97,23 +97,23 @@ export default function ContentPage() {
             <Card key={item.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <Badge variant="secondary">{item.content_type}</Badge>
+                  <Badge variant="secondary">{item.contentType}</Badge>
                   <span className="text-sm font-semibold">${item.price} {item.currency}</span>
                 </div>
                 <CardTitle className="mt-2 line-clamp-2">{item.title}</CardTitle>
-                <CardDescription className="line-clamp-1">by {item.mentor_name}</CardDescription>
+                <CardDescription className="line-clamp-1">by {item.mentor.fullName}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {item.description}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {item.tags.slice(0, 3).map((tag) => (
+                  {item.tags?.slice(0, 3).map((tag) => (
                     <Badge key={tag} variant="outline">{tag}</Badge>
                   ))}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {item.estimated_duration}
+                  {item.estimatedDuration}
                 </div>
                 <Button asChild className="w-full">
                   <Link href={`/content/${item.id}`}>View Details</Link>

@@ -52,17 +52,30 @@ export interface DashboardData {
 // Mentor Types
 export interface Mentor {
   id: string;
-  user_id: string;
-  full_name: string;
+  userId: string;
   headline: string;
-  short_bio: string;
-  long_bio: string;
-  areas_of_expertise: string[];
-  experience_years: number;
+  shortBio: string;
+  longBio: string;
+  areasOfExpertise: string[];
+  experienceYears: number;
+  isVerified: boolean;
+  socialLinks: Record<string, string>;
   languages: string[];
-  social_links: Record<string, string>;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
+  status: string;
+  profileImageUrl: string | null;
+  introVideoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    avatarUrl: string;
+    country: string;
+  };
+  // Convenience properties for display
+  full_name?: string;
+  areas_of_expertise?: string[];
+  experience_years?: number;
 }
 
 export interface MentorApplication {
@@ -91,30 +104,44 @@ export type ContentStatus = 'draft' | 'published' | 'archived';
 
 export interface Content {
   id: string;
-  mentor_id: string;
-  mentor_name: string;
+  mentorId: string;
   title: string;
+  slug: string;
   description: string;
-  content_type: ContentType;
+  contentType: ContentType;
   format: ContentFormat;
-  target_audience: string;
-  problem_it_solves: string;
-  learning_outcomes: string[];
-  delivery_modes: DeliveryMode[];
-  estimated_duration: string;
-  max_participants?: number;
-  location?: string;
+  targetAudience: string;
+  problemItSolves: string | null;
+  learningOutcomes: string[];
+  deliveryModes: DeliveryMode[];
+  estimatedDuration: string;
+  maxParticipants?: number | null;
+  location?: string | null;
   tools: string[];
-  prerequisites: string;
-  required_time_per_week: string;
-  support_model: string;
+  prerequisites: string | null;
+  requiredTimePerWeek: string | null;
+  supportModel: string | null;
   price: number;
   currency: string;
+  thumbnailUrl: string | null;
+  mediaUrl: string | null;
+  mediaType: string;
   tags: string[];
+  level: string;
   status: ContentStatus;
-  ai_context: string;
-  created_at: string;
-  updated_at: string;
+  outline: any[];
+  aiContext: string | null;
+  createdAt: string;
+  updatedAt: string;
+  mentor: {
+    id: string;
+    fullName: string;
+    avatarUrl: string;
+  };
+  // Convenience properties for backward compatibility
+  mentor_name?: string;
+  content_type?: ContentType;
+  estimated_duration?: string;
 }
 
 export interface ContentSummary {

@@ -89,20 +89,20 @@ export default function MentorsPage() {
           {mentors.map((mentor) => (
             <Card key={mentor.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle className="line-clamp-1">{mentor.full_name}</CardTitle>
+                <CardTitle className="line-clamp-1">{mentor.user.fullName}</CardTitle>
                 <CardDescription className="line-clamp-1">{mentor.headline}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-3">
-                  {mentor.short_bio}
+                  {mentor.shortBio}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {mentor.areas_of_expertise.slice(0, 3).map((area) => (
+                  {mentor.areasOfExpertise?.slice(0, 3).map((area) => (
                     <Badge key={area} variant="secondary">{area}</Badge>
                   ))}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {mentor.experience_years} years experience
+                  {mentor.experienceYears} years experience
                 </div>
                 <Button asChild className="w-full">
                   <Link href={`/mentors/${mentor.id}`}>View Profile</Link>
