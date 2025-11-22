@@ -47,13 +47,13 @@ function CallbackHandler() {
 
           // Wait a moment to show success message
           setTimeout(async () => {
-            // Redirect based on role and onboarding status
-            if (!user.onboarding_completed) {
-              router.push('/onboarding');
+            // Check role first - admin and mentor skip onboarding
+            if (user.role === 'admin') {
+              router.push('/admin');
             } else if (user.role === 'mentor') {
               router.push('/mentor/dashboard');
-            } else if (user.role === 'admin') {
-              router.push('/admin/dashboard');
+            } else if (!user.onboarding_completed) {
+              router.push('/onboarding');
             } else if (user.role === 'user') {
               // Check for pending mentor application
               try {
@@ -89,13 +89,13 @@ function CallbackHandler() {
 
           // Wait a moment to show success message
           setTimeout(async () => {
-            // Redirect based on role and onboarding status
-            if (!response.user.onboarding_completed) {
-              router.push('/onboarding');
+            // Check role first - admin and mentor skip onboarding
+            if (response.user.role === 'admin') {
+              router.push('/admin');
             } else if (response.user.role === 'mentor') {
               router.push('/mentor/dashboard');
-            } else if (response.user.role === 'admin') {
-              router.push('/admin/dashboard');
+            } else if (!response.user.onboarding_completed) {
+              router.push('/onboarding');
             } else if (response.user.role === 'user') {
               // Check for pending mentor application
               try {

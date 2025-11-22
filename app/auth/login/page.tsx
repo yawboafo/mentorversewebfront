@@ -55,13 +55,17 @@ export default function LoginPage() {
       // Determine redirect path based on user role and onboarding status
       let redirectPath = '/dashboard';
       
-      if (!response.user.onboarding_completed) {
-        redirectPath = '/onboarding';
-        console.log('⚠️ Onboarding not completed, redirecting to onboarding');
+      // Check role first - admin and mentor skip onboarding
+      if (response.user.role === 'admin') {
+        redirectPath = '/admin';
+        console.log('👑 Admin user, redirecting to admin panel');
       } else if (response.user.role === 'mentor') {
         redirectPath = '/mentor/dashboard';
-      } else if (response.user.role === 'admin') {
-        redirectPath = '/admin';
+        console.log('🎓 Mentor user, redirecting to mentor dashboard');
+      } else if (!response.user.onboarding_completed) {
+        // Regular users need onboarding
+        redirectPath = '/onboarding';
+        console.log('⚠️ Onboarding not completed, redirecting to onboarding');
       } else if (response.user.role === 'user') {
         // Check if user has pending mentor application
         try {

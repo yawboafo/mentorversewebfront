@@ -52,13 +52,25 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    console.log('📋 Onboarding page - user:', user?.email, 'onboarding_completed:', user?.onboarding_completed, 'authLoading:', authLoading);
+    console.log('📋 Onboarding page - user:', user?.email, 'role:', user?.role, 'onboarding_completed:', user?.onboarding_completed, 'authLoading:', authLoading);
     
-    if (user && user.onboarding_completed) {
-      console.log('✅ Onboarding already completed, redirecting to role-specific dashboard');
-      const redirectPath = user.role === 'mentor' ? '/mentor/dashboard' : 
-                          user.role === 'admin' ? '/admin' : '/dashboard';
-      router.push(redirectPath);
+    if (user) {
+      // Admin and mentor roles don't need onboarding
+      if (user.role === 'admin') {
+        console.log('👑 Admin detected, redirecting to admin panel');
+        router.push('/admin');
+        return;
+      }
+      if (user.role === 'mentor') {
+        console.log('🎓 Mentor detected, redirecting to mentor dashboard');
+        router.push('/mentor/dashboard');
+        return;
+      }
+      // Regular users who completed onboarding
+      if (user.onboarding_completed) {
+        console.log('✅ Onboarding already completed, redirecting to dashboard');
+        router.push('/dashboard');
+      }
     }
   }, [user, router, authLoading]);
 
