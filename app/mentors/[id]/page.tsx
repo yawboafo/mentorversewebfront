@@ -68,19 +68,19 @@ export default function MentorDetailPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-3xl mb-2">{mentor.full_name}</CardTitle>
+              <CardTitle className="text-3xl mb-2">{mentor.user.fullName}</CardTitle>
               <CardDescription className="text-lg">{mentor.headline}</CardDescription>
             </div>
             <Badge variant="secondary">
               <Briefcase className="h-4 w-4 mr-1" />
-              {mentor.experience_years} years
+              {mentor.experienceYears} years
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
             <h3 className="font-semibold mb-2">About</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{mentor.long_bio}</p>
+            <p className="text-muted-foreground whitespace-pre-line">{mentor.longBio}</p>
           </div>
           
           <Separator />
@@ -88,7 +88,7 @@ export default function MentorDetailPage() {
           <div>
             <h3 className="font-semibold mb-2">Areas of Expertise</h3>
             <div className="flex flex-wrap gap-2">
-              {mentor.areas_of_expertise.map((area) => (
+              {mentor.areasOfExpertise?.map((area) => (
                 <Badge key={area}>{area}</Badge>
               ))}
             </div>
@@ -100,7 +100,7 @@ export default function MentorDetailPage() {
             <div>
               <h3 className="font-semibold mb-2">Languages</h3>
               <div className="flex flex-wrap gap-2">
-                {mentor.languages.map((lang) => (
+                {mentor.languages?.map((lang) => (
                   <Badge key={lang} variant="outline">
                     <Globe className="h-3 w-3 mr-1" />
                     {lang}
@@ -109,11 +109,11 @@ export default function MentorDetailPage() {
               </div>
             </div>
             
-            {Object.keys(mentor.social_links || {}).length > 0 && (
+            {Object.keys(mentor.socialLinks || {}).length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2">Social Links</h3>
                 <div className="space-y-2">
-                  {Object.entries(mentor.social_links).map(([platform, url]) => (
+                  {Object.entries(mentor.socialLinks).map(([platform, url]) => (
                     <a
                       key={platform}
                       href={url}
