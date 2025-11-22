@@ -95,6 +95,30 @@ export function Navbar() {
     }
 
     // NORMAL USER (mentee) - Learner navigation
+    // Check if user registered as mentor but hasn't been approved yet
+    if (user?.signup_intent === 'mentor') {
+      const mentorStatus = user?.mentor_status || 'none';
+      
+      if (mentorStatus === 'pending_approval') {
+        // Application pending - show status link
+        return [
+          { href: '/mentor/pending', label: 'Application Status', icon: LayoutDashboard },
+          { href: '/mentors', label: 'Mentors', icon: Users },
+          { href: '/content', label: 'Courses', icon: BookOpen },
+          { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
+        ];
+      } else if (mentorStatus === 'none') {
+        // Need to complete application
+        return [
+          { href: '/mentor/apply', label: 'Complete Application', icon: LayoutDashboard },
+          { href: '/mentors', label: 'Mentors', icon: Users },
+          { href: '/content', label: 'Courses', icon: BookOpen },
+          { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
+        ];
+      }
+    }
+    
+    // Regular user navigation
     const baseLinks = [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/mentors', label: 'Mentors', icon: Users },
@@ -102,8 +126,8 @@ export function Navbar() {
       { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
     ];
     
-    // Only show "Become a Mentor" for regular users
-    if (user?.role === 'user') {
+    // Only show "Become a Mentor" for regular users (not mentor intent)
+    if (user?.signup_intent !== 'mentor') {
       baseLinks.push({ href: '/mentor/join', label: 'Become a Mentor', icon: Sparkles });
     }
     

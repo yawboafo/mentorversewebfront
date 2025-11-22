@@ -34,6 +34,19 @@ export default function DashboardPage() {
         router.replace('/mentor/dashboard');
         return;
       }
+      // Redirect users who registered as mentors
+      if (user.signup_intent === 'mentor') {
+        const mentorStatus = user.mentor_status || 'none';
+        if (mentorStatus === 'pending_approval') {
+          console.log('⏳ Mentor application pending, redirecting to pending page');
+          router.replace('/mentor/pending');
+          return;
+        } else if (mentorStatus === 'none') {
+          console.log('📝 Mentor intent, no application - redirecting to apply');
+          router.replace('/mentor/apply');
+          return;
+        }
+      }
       // Regular users need onboarding
       if (!user.onboarding_completed) {
         router.push('/onboarding');
