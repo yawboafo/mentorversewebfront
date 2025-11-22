@@ -40,6 +40,10 @@ export default function LoginPage() {
       console.log('✅ Login successful, token stored');
       console.log('👤 User:', response.user.email, 'Role:', response.user.role, 'Onboarding:', response.user.onboarding_completed);
       
+      // Verify token was stored
+      const storedToken = localStorage.getItem('access_token');
+      console.log('🔑 Token stored in localStorage:', storedToken ? 'YES' : 'NO');
+      
       // Show success toast immediately
       toast.success('Welcome back! 🎉');
       
@@ -53,6 +57,7 @@ export default function LoginPage() {
       
       if (!response.user.onboarding_completed) {
         redirectPath = '/onboarding';
+        console.log('⚠️ Onboarding not completed, redirecting to onboarding');
       } else if (response.user.role === 'mentor') {
         redirectPath = '/mentor/dashboard';
       } else if (response.user.role === 'admin') {
@@ -60,6 +65,9 @@ export default function LoginPage() {
       }
       
       console.log('🚀 Navigating to:', redirectPath);
+      
+      // Small delay to ensure state is fully updated
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Use window.location for reliable navigation after login
       window.location.href = redirectPath;

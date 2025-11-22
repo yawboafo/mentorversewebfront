@@ -50,10 +50,13 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    console.log('📋 Onboarding page - user:', user?.email, 'onboarding_completed:', user?.onboarding_completed, 'authLoading:', authLoading);
+    
     if (user && user.onboarding_completed) {
+      console.log('✅ Onboarding already completed, redirecting to dashboard');
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, router, authLoading]);
 
   const toggleGoal = (goal: string) => {
     if (individualData.goals.includes(goal)) {
