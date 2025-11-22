@@ -48,6 +48,13 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      console.log('Sending registration data:', {
+        full_name: formData.full_name,
+        email: formData.email,
+        password: formData.password,
+        account_type: formData.account_type,
+      });
+      
       const response = await authApi.register({
         full_name: formData.full_name,
         email: formData.email,
@@ -66,7 +73,27 @@ export default function RegisterPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      console.error('Registration error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        status: err.status,
+        errors: err.errors
+      });
+      
+      // Display more detailed error message
+      let errorMessage = '';
+      if (err.errors) {
+        const errorMessages = Object.entries(err.errors)
+          .map(([field, messages]) => `${field}: ${(messages as string[]).join(', ')}`)
+          .join('; ');
+        errorMessage = errorMessages;
+        setError(errorMessages);
+      } else {
+        errorMessage = err.message || 'Failed to create account. Please try again.';
+        setError(errorMessage);
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
