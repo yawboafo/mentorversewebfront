@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRequireAuth } from '@/hooks/use-require-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { onboardingApi } from '@/lib/api/onboarding';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -26,6 +27,7 @@ const GOAL_OPTIONS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useRequireAuth();
+  const { refreshUser } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,11 +91,18 @@ export default function OnboardingPage() {
         experience_level: individualData.experience_level,
       });
 
-      toast.success('Onboarding completed!');
-      router.push('/dashboard');
+      console.log('✅ Onboarding submitted successfully, refreshing user...');
+      
+      // Refresh user data to update onboarding_completed flag
+      await refreshUser();
+      
+      toast.success('Onboarding completed! 🎉');
+      
+      // Use window.location.href for full page reload to ensure auth state is updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'Failed to complete onboarding');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -104,11 +113,19 @@ export default function OnboardingPage() {
 
     try {
       await onboardingApi.submitBusiness(businessData);
-      toast.success('Onboarding completed!');
-      router.push('/dashboard');
+      
+      console.log('✅ Business onboarding submitted successfully, refreshing user...');
+      
+      // Refresh user data to update onboarding_completed flag
+      await refreshUser();
+      
+      toast.success('Onboarding completed! 🎉');
+      
+      // Use window.location.href for full page reload to ensure auth state is updated
+      await new Promise(resolve => setTimeout(resolve, 500));
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message || 'Failed to complete onboarding');
-    } finally {
       setIsLoading(false);
     }
   };
