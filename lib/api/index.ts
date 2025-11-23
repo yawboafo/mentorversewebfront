@@ -6,7 +6,8 @@ export * from './onboarding';
 export * from './dashboard';
 export * from './mentors';
 export * from './content';
-export * from './modules';
+// Export modules API but not types (they're in ./types)
+export { modulesApi } from './modules';
 export * from './ai';
 export * from './admin';
 export * from './timeline';

@@ -124,6 +124,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
   // Reorder modules
   const reorderModules = useCallback(
     async (orders: { id: string; order: number }[]) => {
+      if (!contentId) return;
       try {
         setLoading(true);
         setError(null);
