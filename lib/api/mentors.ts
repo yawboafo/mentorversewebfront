@@ -119,7 +119,10 @@ export const mentorsApi = {
     if (query?.search) params.append('search', query.search);
     
     const endpoint = `/mentor/mentees${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiClient.get<MenteesResponse>(endpoint);
+    console.log('🔍 Fetching mentees from:', endpoint);
+    const response = await apiClient.get<MenteesResponse>(endpoint);
+    console.log('📊 Mentees response:', response);
+    return response;
   },
 
   /**

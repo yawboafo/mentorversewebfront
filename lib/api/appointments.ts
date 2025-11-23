@@ -279,15 +279,18 @@ export const appointmentsApi = {
 
   /**
    * Get upcoming appointments for the current user
+   * Includes both scheduled and confirmed appointments
    */
-  async getUpcomingAppointments(limit: number = 10): Promise<Appointment[]> {
+  async getUpcomingAppointments(limit: number = 100): Promise<Appointment[]> {
     const today = new Date().toISOString().split('T')[0];
     const response = await this.getAppointments({
       startDate: today,
-      status: 'scheduled',
       limit,
     });
-    return response.data;
+    // Filter to include scheduled and confirmed appointments only
+    return response.data.filter(
+      (apt) => apt.status === 'scheduled' || apt.status === 'confirmed'
+    );
   },
 
   /**
