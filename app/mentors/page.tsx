@@ -248,7 +248,7 @@ export default function MentorsPage() {
                     {category.label}
                   </motion.button>
                 );
-              )}
+              })}
               </div>
             </div>
 

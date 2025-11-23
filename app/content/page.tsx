@@ -226,7 +226,7 @@ export default function ContentPage() {
                     {category.label}
                   </motion.button>
                 );
-              )}
+              })}
               </div>
             </div>
 
