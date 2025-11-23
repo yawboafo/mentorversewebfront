@@ -12,7 +12,7 @@ export default function UserAppointmentsPage() {
         </p>
       </div>
       
-      <AppointmentsManager role="mentee" />
+      <AppointmentsManager userRole="mentee" />
     </div>
   );
 }

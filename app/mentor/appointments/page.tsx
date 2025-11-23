@@ -12,7 +12,7 @@ export default function MentorAppointmentsPage() {
         </p>
       </div>
       
-      <AppointmentsManager role="mentor" />
+      <AppointmentsManager userRole="mentor" />
     </div>
   );
 }
