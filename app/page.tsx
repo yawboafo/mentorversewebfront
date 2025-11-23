@@ -13,6 +13,7 @@ import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
 import { formatCurrency } from '@/lib/utils/currency';
+import { CourseVideoCard } from '@/components/course-video-card';
 
 export default function HomePage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -494,107 +495,37 @@ export default function HomePage() {
           {isLoadingCourses ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {[...Array(6)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="h-48 bg-muted animate-pulse" />
-                  <CardHeader>
-                    <div className="h-6 bg-muted animate-pulse rounded mb-2" />
-                    <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-muted animate-pulse rounded mb-2" />
+                <div key={i} className="space-y-3">
+                  <div className="aspect-video rounded-xl bg-muted animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
                     <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
-                  </CardContent>
-                </Card>
+                    <div className="flex gap-2">
+                      <div className="h-6 bg-muted animate-pulse rounded w-16" />
+                      <div className="h-6 bg-muted animate-pulse rounded w-20" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {courses.map((course, i) => (
-                <Link key={course.id} href={`/content/${course.id}`}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ 
-                      duration: 0.5, 
-                      delay: i * 0.1,
-                      type: "spring",
-                      stiffness: 200,
-                      damping: 20
-                    }}
-                    whileHover={{ 
-                      y: -10,
-                      transition: { duration: 0.2 }
-                    }}
-                  >
-                    <Card className="overflow-hidden group cursor-pointer h-full hover:shadow-xl transition-shadow">
-                      {/* Course Thumbnail */}
-                      <div className="relative h-48 bg-gradient-to-br from-blue-500 to-cyan-500 overflow-hidden">
-                        {course.thumbnailUrl ? (
-                          <Image
-                            src={course.thumbnailUrl}
-                            alt={course.title}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-300"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Play className="h-16 w-16 text-white/80" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-
-                      <CardHeader>
-                        <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-blue-600 transition-colors">
-                          {course.title}
-                        </CardTitle>
-                        {course.mentor && (
-                          <CardDescription className="flex items-center gap-2 text-sm">
-                            <Users className="h-4 w-4" />
-                            {course.mentor.fullName}
-                          </CardDescription>
-                        )}
-                      </CardHeader>
-
-                      <CardContent>
-                        {/* Tags */}
-                        {course.tags && course.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {course.tags.slice(0, 3).map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Price and Duration */}
-                        <div className="flex items-center justify-between text-sm">
-                          {course.price ? (
-                            <span className="font-bold text-lg text-blue-600">
-                              {formatCurrency(
-                                course.display_price || course.price, 
-                                course.display_currency || course.currency || 'USD'
-                              )}
-                            </span>
-                          ) : (
-                            <span className="font-bold text-lg text-green-600">
-                              Free
-                            </span>
-                          )}
-                          {course.estimatedDuration && (
-                            <span className="flex items-center gap-1 text-foreground/60">
-                              <Clock className="h-4 w-4" />
-                              {course.estimatedDuration}
-                            </span>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Link>
+                <motion.div
+                  key={course.id}
+                  initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: i * 0.1,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 20
+                  }}
+                >
+                  <CourseVideoCard content={course} priority={i < 3} />
+                </motion.div>
               ))}
             </div>
           )}

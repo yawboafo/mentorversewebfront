@@ -1,48 +1,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { contentApi, ContentQuery } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
-import { Search, BookOpen, Play, Clock, Award, TrendingUp, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils/currency';
+import { Search, SlidersHorizontal, TrendingUp, Sparkles, Clock, X } from 'lucide-react';
+import { CourseVideoCard } from '@/components/course-video-card';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 18;
 
 export default function ContentPage() {
-  const [content, setContent] = useState<Content[]>([]);
+  const [allContent, setAllContent] = useState<Content[]>([]);
+  const [featuredContent, setFeaturedContent] = useState<Content | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filters
   const [contentType, setContentType] = useState<'all' | 'framework' | 'course'>('all');
+  const [level, setLevel] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'trending' | 'newest' | 'price_low' | 'price_high'>('trending');
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchContent();
-  }, [currentPage]);
+  }, [currentPage, sortBy]);
 
-  const fetchContent = async (query?: ContentQuery) => {
+  const fetchContent = async (customQuery?: Partial<ContentQuery>) => {
     try {
       setIsLoading(true);
-      const finalQuery: ContentQuery = {
-        ...query,
-        page: query?.page || currentPage,
-        limit: ITEMS_PER_PAGE
-      };
       
-      const response = await contentApi.getContent(finalQuery);
-      setContent(response.data || []);
+      const query: ContentQuery = {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        ...customQuery
+      };
+
+      // Add filters
+      if (searchQuery) query.q = searchQuery;
+      if (contentType !== 'all') query.content_type = contentType;
+      // Note: level filter is applied client-side since API doesn't support it yet
+
+      const response = await contentApi.getContent(query);
+      let contentData = response.data || [];
+      
+      // Apply client-side level filter (since API doesn't support it yet)
+      if (level !== 'all') {
+        contentData = contentData.filter(c => 
+          c.level?.toLowerCase() === level.toLowerCase()
+        );
+      }
+      
+      setAllContent(contentData);
       setTotalItems(response.total || 0);
       setTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
+      
+      // Set featured content (first trending or newest item)
+      if (contentData.length > 0 && currentPage === 1) {
+        setFeaturedContent(contentData[0]);
+      }
     } catch (error) {
       console.error('Failed to fetch content:', error);
-      setContent([]);
+      setAllContent([]);
       setTotalItems(0);
       setTotalPages(1);
     } finally {
@@ -51,226 +83,351 @@ export default function ContentPage() {
   };
 
   const handleSearch = () => {
-    const query: ContentQuery = { 
-      q: searchQuery,
-      page: 1
-    };
-    if (contentType !== 'all') {
-      query.content_type = contentType;
-    }
     setCurrentPage(1);
-    fetchContent(query);
+    fetchContent();
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setContentType('all');
+    setLevel('all');
+    setSortBy('trending');
+    setCurrentPage(1);
+    fetchContent({});
   };
+
+  const hasActiveFilters = searchQuery || contentType !== 'all' || level !== 'all';
+
+  // Group content for discovery sections
+  const getContentBySection = () => {
+    const courses = allContent.filter(c => c.contentType === 'course');
+    const frameworks = allContent.filter(c => c.contentType === 'framework');
+    const beginnerContent = allContent.filter(c => c.level?.toLowerCase() === 'beginner');
+    
+    return {
+      trending: allContent.slice(0, 6),
+      courses: courses.slice(0, 6),
+      frameworks: frameworks.slice(0, 6),
+      beginners: beginnerContent.slice(0, 6)
+    };
+  };
+
+  const sections = getContentBySection();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-          Level Up Your Skills
-        </h1>
-        <p className="text-lg text-muted-foreground mb-6">
-          Discover frameworks and courses built by real mentors. 🎯
-        </p>
-        
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10"
-            />
+    <div className="min-h-screen bg-background">
+      {/* Top Bar / Filters */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          {/* Search Bar */}
+          <div className="flex gap-3 items-center mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search courses, mentors, topics..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-10 h-12 text-base"
+              />
+            </div>
+            <Button 
+              onClick={handleSearch}
+              size="lg"
+              className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700"
+            >
+              Search
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setShowFilters(!showFilters)}
+              className="hidden sm:flex"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+            </Button>
           </div>
-          <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="course">Courses</SelectItem>
-              <SelectItem value="framework">Frameworks</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={handleSearch}>Search</Button>
+
+          {/* Filters Row */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-3 pt-3 pb-1">
+                  {/* Content Type */}
+                  <Select value={contentType} onValueChange={(value: any) => setContentType(value)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="course">Courses</SelectItem>
+                      <SelectItem value="framework">Frameworks</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Level */}
+                  <Select value={level} onValueChange={setLevel}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Sort */}
+                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trending">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4" />
+                          Trending
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="newest">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          Newest
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="price_low">Price: Low to High</SelectItem>
+                      <SelectItem value="price_high">Price: High to Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Clear Filters */}
+                  {hasActiveFilters && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearFilters}
+                      className="gap-1"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Card key={i} className="overflow-hidden">
-              <div className="h-48 animate-pulse bg-muted" />
-              <div className="p-4 space-y-3">
-                <div className="h-6 animate-pulse bg-muted rounded" />
-                <div className="h-4 animate-pulse bg-muted rounded w-3/4" />
-                <div className="h-10 animate-pulse bg-muted rounded" />
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : content.length === 0 ? (
-        <div className="text-center py-20">
-          <BookOpen className="h-20 w-20 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-2xl font-semibold mb-2">No content found</h3>
-          <p className="text-muted-foreground">Try adjusting your search criteria</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {content.map((item) => (
-            <Link key={item.id} href={`/content/${item.id}`}>
-              <Card className="group h-full overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-orange-200 dark:hover:border-orange-800">
-                {/* Cover Image/Video Section */}
-                <div className="relative h-48 bg-gradient-to-br from-orange-100 via-pink-100 to-purple-100 dark:from-orange-900/30 dark:via-pink-900/30 dark:to-purple-900/30">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {item.mediaType === 'video' ? (
-                      <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Play className="h-10 w-10 fill-white text-white" />
-                      </div>
-                    ) : (
-                      <div className="text-7xl opacity-20">
-                        {item.contentType === 'course' ? '🎯' : '✨'}
-                      </div>
-                    )}
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Featured / Hero Section */}
+        {!isLoading && featuredContent && currentPage === 1 && !hasActiveFilters && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-orange-600" />
+              <h2 className="text-2xl font-bold">Featured Course</h2>
+            </div>
+            <CourseVideoCard content={featuredContent} variant="featured" priority />
+          </motion.div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <div className="aspect-video rounded-xl bg-muted animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-5 bg-muted animate-pulse rounded w-3/4" />
+                  <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-muted animate-pulse rounded w-16" />
+                    <div className="h-6 bg-muted animate-pulse rounded w-20" />
                   </div>
-                  
-                  {/* Price Badge */}
-                  <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full font-bold">
-                    {formatCurrency(
-                      item.display_price || item.price,
-                      item.display_currency || item.currency || 'USD'
-                    )}
-                  </div>
-                  
-                  {/* Type Badge */}
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-orange-600 hover:bg-orange-700 capitalize">
-                      {item.contentType}
-                    </Badge>
-                  </div>
-                  
-                  {/* Level Badge */}
-                  {item.level && (
-                    <div className="absolute bottom-3 left-3">
-                      <Badge variant="secondary" className="backdrop-blur-sm">
-                        {item.level}
-                      </Badge>
-                    </div>
-                  )}
                 </div>
-
-                {/* Content Section */}
-                <CardContent className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-bold text-lg line-clamp-2 group-hover:text-orange-600 transition-colors mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">by {item.mentor.fullName}</p>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {item.description}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.tags?.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {(item.tags?.length || 0) > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{(item.tags?.length || 0) - 2}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Footer Info */}
-                  <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-                    {item.estimatedDuration && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{item.estimatedDuration}</span>
-                      </div>
-                    )}
-                    {item.contentType === 'course' && (
-                      <div className="flex items-center gap-1 text-orange-600">
-                        <TrendingUp className="h-3 w-3" />
-                        <span className="font-medium">Popular</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!isLoading && totalPages > 1 && (
-        <div className="mt-12 flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              // Show first page, last page, current page, and pages around current
-              if (
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 1 && page <= currentPage + 1)
-              ) {
-                return (
-                  <Button
-                    key={page}
-                    variant={page === currentPage ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                    className="min-w-[40px]"
-                  >
-                    {page}
-                  </Button>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-2">...</span>;
-              }
-              return null;
-            })}
+              </div>
+            ))}
           </div>
+        )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
+        {/* Empty State */}
+        {!isLoading && allContent.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20"
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      )}
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold mb-2">No courses found</h3>
+            <p className="text-muted-foreground mb-6">
+              Try adjusting your search or filters
+            </p>
+            {hasActiveFilters && (
+              <Button onClick={handleClearFilters} variant="outline">
+                Clear all filters
+              </Button>
+            )}
+          </motion.div>
+        )}
 
-      {/* Results info */}
-      {!isLoading && content.length > 0 && (
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} {contentType === 'all' ? 'items' : contentType === 'course' ? 'courses' : 'frameworks'}
-        </div>
-      )}
+        {/* Discovery Sections (when no search/filters active) */}
+        {!isLoading && !hasActiveFilters && currentPage === 1 && (
+          <div className="space-y-12">
+            {/* Trending Section */}
+            {sections.trending.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-6 w-6 text-orange-600" />
+                    <h2 className="text-2xl font-bold">Trending Now</h2>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sections.trending.map((content, index) => (
+                    <motion.div
+                      key={content.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <CourseVideoCard content={content} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Courses Section */}
+            {sections.courses.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🎓</span>
+                    <h2 className="text-2xl font-bold">Popular Courses</h2>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sections.courses.map((content, index) => (
+                    <motion.div
+                      key={content.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <CourseVideoCard content={content} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Wins for Beginners */}
+            {sections.beginners.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-6 w-6 text-green-600" />
+                    <h2 className="text-2xl font-bold">Quick Wins for Beginners</h2>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sections.beginners.map((content, index) => (
+                    <motion.div
+                      key={content.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <CourseVideoCard content={content} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Frameworks Section */}
+            {sections.frameworks.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">✨</span>
+                    <h2 className="text-2xl font-bold">Proven Frameworks</h2>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sections.frameworks.map((content, index) => (
+                    <motion.div
+                      key={content.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <CourseVideoCard content={content} />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* All Content Grid (when searching/filtering or pagination) */}
+        {!isLoading && (hasActiveFilters || currentPage > 1) && allContent.length > 0 && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-muted-foreground">
+                {totalItems} {totalItems === 1 ? 'result' : 'results'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allContent.map((content, index) => (
+                <motion.div
+                  key={content.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <CourseVideoCard content={content} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Load More / Pagination */}
+        {!isLoading && totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            {currentPage < totalPages ? (
+              <Button
+                size="lg"
+                onClick={() => {
+                  setCurrentPage(currentPage + 1);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700"
+              >
+                Load More
+              </Button>
+            ) : (
+              <p className="text-muted-foreground">
+                You've reached the end! 🎉
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
