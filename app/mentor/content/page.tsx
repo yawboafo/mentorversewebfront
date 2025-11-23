@@ -43,9 +43,18 @@ export default function MentorContentPage() {
   const fetchContent = async () => {
     try {
       setIsLoading(true);
-      // Fetch content created by current mentor
-      const response = await contentApi.getContent({ mentor_id: user?.id });
-      setContents(Array.isArray(response) ? response : response.data || []);
+      // Fetch ALL content created by current mentor (including drafts)
+      console.log('📚 Fetching content for mentor:', user?.id);
+      // Note: Backend might filter published content only by default
+      // Mentors should see their own content regardless of status
+      const response = await contentApi.getContent({ 
+        mentor_id: user?.id,
+        limit: 100 // Get more results to ensure we see all content
+      });
+      console.log('📚 Content response:', response);
+      const contentArray = Array.isArray(response) ? response : response.data || [];
+      console.log('📚 Content array:', contentArray, 'Count:', contentArray.length);
+      setContents(contentArray);
     } catch (err: any) {
       console.error('Failed to load content:', err);
       toast.error('Failed to load your content');

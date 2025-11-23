@@ -50,30 +50,34 @@ export default function AIBuilderPage() {
 
     setIsSaving(true);
     try {
-      // Map ContentDraft to Content creation payload (backend expects snake_case)
-      const contentPayload = {
+      // Map ContentDraft to Content creation payload
+      // Note: Backend expects camelCase (contentType, not content_type)
+      // outline and ai_context are NOT sent during content creation
+      // Outline/modules are added separately after content is created
+      const contentPayload: any = {
         title: draft.title,
         description: draft.description,
-        content_type: draft.content_type,
-        target_audience: draft.target_audience,
-        problem_it_solves: draft.problem_it_solves,
-        learning_outcomes: draft.learning_outcomes,
-        delivery_modes: draft.delivery_modes,
-        estimated_duration: draft.estimated_duration,
-        level: draft.level,
+        contentType: draft.content_type || 'course', // camelCase for backend
+        targetAudience: draft.target_audience,
+        problemItSolves: draft.problem_it_solves || null,
+        learningOutcomes: draft.learning_outcomes || [],
+        deliveryModes: draft.delivery_modes || [],
+        estimatedDuration: draft.estimated_duration,
+        level: draft.level || 'intermediate',
         prerequisites: draft.prerequisites || null,
-        support_model: draft.support_model || null,
-        outline: draft.outline,
+        supportModel: draft.support_model || null,
         tags: draft.tags || [],
         price: draft.price || 0,
-        // Don't set currency - let backend determine from mentor's profile
+        currency: 'USD', // Required by backend despite v2.7.0 docs
         status: 'draft' as const,
-        format: 'mixed' as const,
-        tools: [],
-        ai_context: `Generated via AI Builder with idea: ${selectedIdea?.title || 'Custom'}`,
+        format: draft.format || 'mixed',
+        tools: draft.tools || [],
       };
 
+      console.log('💾 Saving AI-generated content:', contentPayload);
       const savedContent = await contentApi.createContent(contentPayload);
+      console.log('✅ Content saved successfully:', savedContent);
+      console.log('📝 Content ID:', savedContent.id, 'Mentor ID:', savedContent.mentorId);
       
       toast.success('Draft saved successfully!');
       router.push(`/mentor/dashboard`);

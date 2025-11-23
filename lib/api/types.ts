@@ -472,6 +472,7 @@ export interface ContentDraft {
   title: string;
   description: string;
   content_type: ContentType;
+  format?: ContentFormat;
   target_audience: string;
   problem_it_solves: string;
   learning_outcomes: string[];
@@ -482,6 +483,7 @@ export interface ContentDraft {
   support_model?: string;
   outline: Module[];
   tags?: string[];
+  tools?: string[];
   price?: number;
 }
 

@@ -82,7 +82,8 @@ export const apiClient = {
         console.error('❌ API Error Response:', {
           endpoint,
           status: response.status,
-          data
+          data,
+          fullError: JSON.stringify(data, null, 2)
         });
         
         throw new ApiException(

@@ -365,29 +365,31 @@ export default function CreateContentPage() {
     setIsLoading(true);
 
     try {
-      const contentData = {
-        title: formData.title,
-        description: formData.description,
-        content_type: formData.contentType,
+      // Prepare content data (backend expects camelCase)
+      const contentData: any = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        contentType: formData.contentType,
         format: formData.format,
-        target_audience: formData.targetAudience,
-        problem_it_solves: formData.problemItSolves || null,
-        learning_outcomes: formData.learningOutcomes,
-        delivery_modes: formData.deliveryModes,
-        estimated_duration: formData.estimatedDuration,
-        max_participants: formData.maxParticipants ? parseInt(formData.maxParticipants) : null,
-        location: formData.location || null,
-        tools: formData.tools,
-        prerequisites: formData.prerequisites || null,
-        required_time_per_week: formData.requiredTimePerWeek || null,
-        support_model: formData.supportModel || null,
+        targetAudience: formData.targetAudience.trim(),
+        problemItSolves: formData.problemItSolves?.trim() || null,
+        learningOutcomes: formData.learningOutcomes.filter(lo => lo.trim()),
+        deliveryModes: formData.deliveryModes,
+        estimatedDuration: formData.estimatedDuration.trim(),
+        maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants) : null,
+        location: formData.location?.trim() || null,
+        tools: formData.tools.filter(t => t.trim()),
+        prerequisites: formData.prerequisites?.trim() || null,
+        requiredTimePerWeek: formData.requiredTimePerWeek?.trim() || null,
+        supportModel: formData.supportModel?.trim() || null,
         price: parseFloat(formData.price),
-        currency: 'USD', // TODO: Remove once backend v2.7.0 is fully deployed (auto-sets from mentor country)
+        currency: 'USD',
         level: formData.level,
-        tags: formData.tags,
+        tags: formData.tags.filter(t => t.trim()),
         status: 'draft' as const
       };
 
+      console.log('📝 Submitting content data:', contentData);
       const response = await contentApi.createContent(contentData);
       setCreatedContentId(response.id);
       toast.success('Content saved as draft! Now add modules and resources.');

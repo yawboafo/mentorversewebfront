@@ -24,14 +24,15 @@ export const contentApi = {
     const params = new URLSearchParams();
     if (query?.q) params.append('q', query.q);
     if (query?.tags) query.tags.forEach(tag => params.append('tags', tag));
-    if (query?.content_type) params.append('content_type', query.content_type);
-    if (query?.min_price !== undefined) params.append('min_price', query.min_price.toString());
-    if (query?.max_price !== undefined) params.append('max_price', query.max_price.toString());
-    if (query?.mentor_id) params.append('mentor_id', query.mentor_id);
+    if (query?.content_type) params.append('contentType', query.content_type); // Backend expects camelCase
+    if (query?.min_price !== undefined) params.append('minPrice', query.min_price.toString());
+    if (query?.max_price !== undefined) params.append('maxPrice', query.max_price.toString());
+    if (query?.mentor_id) params.append('mentorId', query.mentor_id); // Backend expects camelCase
     if (query?.page) params.append('page', query.page.toString());
     if (query?.limit) params.append('limit', query.limit.toString());
     
     const endpoint = `/content${params.toString() ? `?${params.toString()}` : ''}`;
+    console.log('🔍 Fetching content with filters:', Object.fromEntries(params));
     const response = await apiClient.get<Content[] | ContentResponse>(endpoint);
     // Handle both array and paginated response formats
     if (Array.isArray(response)) {
@@ -54,6 +55,7 @@ export const contentApi = {
   },
 
   async createContent(data: Partial<Content>): Promise<Content> {
+    console.log('📤 Creating content with data:', JSON.stringify(data, null, 2));
     return apiClient.post<Content>('/content', data);
   },
 

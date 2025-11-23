@@ -110,13 +110,6 @@ export function AppointmentsManager({ userRole }: AppointmentsManagerProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Appointments</h2>
-        <p className="text-muted-foreground">
-          Manage your {userRole === 'mentor' ? 'mentoring' : 'learning'} sessions
-        </p>
-      </div>
-
       <Tabs value={selectedTab} onValueChange={(value: any) => setSelectedTab(value)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
