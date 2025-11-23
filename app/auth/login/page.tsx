@@ -7,14 +7,13 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
 import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
-import { Mail, Lock, ArrowRight, GraduationCap, Users, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -118,207 +117,165 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 py-12">
-      {/* Subtle ambient background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent dark:from-blue-950/20" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-100/40 via-transparent to-transparent dark:from-indigo-950/20" />
-
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
       <motion.div
-        className="w-full max-w-md relative z-10"
+        className="w-full max-w-[420px]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
       >
-        <Card className="border border-slate-200/60 dark:border-slate-800/60 shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
-          <CardHeader className="space-y-3 pb-6 pt-8">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="flex flex-col items-center gap-3"
-            >
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-8 w-8 text-blue-600" />
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">MentorVerse</h1>
-              </div>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-center"
-            >
-              <CardTitle className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                Welcome back
-              </CardTitle>
-              <CardDescription className="text-base text-slate-600 dark:text-slate-400">
-                Continue your learning journey with real mentors
-              </CardDescription>
-            </motion.div>
-          </CardHeader>
-          
-          <CardContent className="space-y-5 pb-3">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
-                <Alert variant="destructive" className="border-l-4">
-                  <AlertDescription className="text-sm">{error}</AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">MentorVerse</h1>
+        </div>
 
-            {/* Social Login Section */}
+        {/* Main Card */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-800/60 p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Welcome back 👋
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Jump back into your mentorship journey
+            </p>
+          </div>
+          
+          {/* Error Alert */}
+          {error && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="space-y-3"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6"
             >
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400 text-center">Or continue with</p>
+              <Alert variant="destructive" className="border-l-4">
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+
+          {/* Email/Password Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                className="h-12 text-base rounded-xl"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </Label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
+                >
+                  Forgot?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="h-12 text-base rounded-xl pr-12"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <motion.div
+                      className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    Logging in...
+                  </>
+                ) : (
+                  'Log in'
+                )}
+              </Button>
+            </motion.div>
+
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+              Don't have an account?{' '}
+              <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
+                Sign up
+              </Link>
+            </p>
+          </form>
+
+          {/* Social Login - BELOW email form */}
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">or</span>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 text-center mb-4">
+                Continue with
+              </p>
               <SocialLoginGroup
                 onProviderClick={handleSocialLogin}
                 isLoading={isSocialLoading}
                 loadingProvider={loadingProvider}
               />
-            </motion.div>
+            </div>
+          </div>
 
-            {/* Divider */}
-            <motion.div
-              className="relative py-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Separator />
-            </motion.div>
-          </CardContent>
-
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-5 pb-3">
-              <motion.div 
-                className="space-y-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+          {/* Mentor CTA */}
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-500 mb-3">
+              Want to mentor others?
+            </p>
+            <Link href="/mentor/join">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-11 text-sm font-medium rounded-xl border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
               >
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    className="pl-10 h-11 text-sm"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </motion.div>
-              
-              <motion.div 
-                className="space-y-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10 h-11 text-sm"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </motion.div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col space-y-4 pt-4 pb-6">
-              <motion.div
-                className="w-full"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <Button 
-                  type="submit" 
-                  className="w-full h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <motion.div
-                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      />
-                      Logging in...
-                    </>
-                  ) : (
-                    'Log in'
-                  )}
-                </Button>
-              </motion.div>
-              
-              <motion.div
-                className="space-y-4 pt-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-              >
-                <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-                  Don't have an account?{' '}
-                  <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                    Sign up
-                  </Link>
-                </p>
-
-                <div className="relative">
-                  <Separator />
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-center text-xs font-medium text-slate-500 dark:text-slate-500">Want to mentor others?</p>
-                  <Link href="/mentor/join">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-10 gap-2 text-sm font-medium border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                    >
-                      <Users className="h-4 w-4" />
-                      I'm a mentor
-                    </Button>
-                  </Link>
-                </div>
-              </motion.div>
-            </CardFooter>
-          </form>
-        </Card>
+                I'm a mentor
+              </Button>
+            </Link>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
