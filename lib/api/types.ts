@@ -32,6 +32,7 @@ export interface User {
   created_at: string;
   signup_intent?: SignupIntent;
   mentor_status?: MentorStatus;
+  preferred_currency?: string; // v2.7.0: Auto-set from country
 }
 
 export interface LoginResponse {

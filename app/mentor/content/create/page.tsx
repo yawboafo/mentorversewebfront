@@ -382,6 +382,7 @@ export default function CreateContentPage() {
         required_time_per_week: formData.requiredTimePerWeek || null,
         support_model: formData.supportModel || null,
         price: parseFloat(formData.price),
+        currency: 'USD', // TODO: Remove once backend v2.7.0 is fully deployed (auto-sets from mentor country)
         level: formData.level,
         tags: formData.tags,
         status: 'draft' as const
