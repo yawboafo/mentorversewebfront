@@ -132,11 +132,6 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">MentorVerse</h1>
-        </div>
-
         {/* Main Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-800/60 p-8">
           {/* Header */}
