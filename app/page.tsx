@@ -13,7 +13,7 @@ import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
 import { formatCurrency } from '@/lib/utils/currency';
-import { CourseVideoCard } from '@/components/course-video-card';
+import { CourseLearningCard } from '@/components/course-learning-card';
 
 export default function HomePage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -524,7 +524,7 @@ export default function HomePage() {
                     damping: 20
                   }}
                 >
-                  <CourseVideoCard content={course} priority={i < 3} />
+                  <CourseLearningCard content={course} priority={i < 3} />
                 </motion.div>
               ))}
             </div>
