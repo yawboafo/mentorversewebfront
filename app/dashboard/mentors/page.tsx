@@ -32,10 +32,26 @@ export default function MyMentorsPage() {
   const fetchMentors = async () => {
     try {
       setIsLoading(true);
+      setError('');
       const response = await mentorsApi.getMyMentors();
       setMentors(response.data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load mentors');
+      console.error('Failed to fetch mentors:', err);
+      
+      // Handle specific error types
+      if (err.status === 401) {
+        setError('Your session has expired. Please log in again.');
+      } else if (err.status === 403) {
+        setError('You do not have permission to view this page.');
+      } else if (err.status === 404) {
+        setError('Subscriptions service is temporarily unavailable.');
+      } else if (err.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (err.message?.toLowerCase().includes('network')) {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError(err.message || 'Failed to load mentors. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -110,14 +126,24 @@ export default function MyMentorsPage() {
           ))}
         </div>
       ) : error ? (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={fetchMentors} className="mt-4">
-            Try Again
-          </Button>
+        <Card className="p-12 text-center border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/20">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+            <Users className="h-8 w-8 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Unable to Load Mentors</h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">{error}</p>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={fetchMentors} variant="default">
+              <Loader2 className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/mentors">Browse Mentors</Link>
+            </Button>
+          </div>
         </Card>
       ) : mentors.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="p-12 text-center bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200/50 dark:border-purple-800/30">
           <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-2xl font-bold mb-2">No Mentors Yet</h3>
           <p className="text-muted-foreground mb-6">
@@ -140,9 +166,9 @@ export default function MyMentorsPage() {
                   {/* Header */}
                   <div className="flex items-start gap-4 mb-4">
                     <Avatar className="h-20 w-20 ring-2 ring-purple-500/20">
-                      <AvatarImage src={mentor.avatar_url || mentor.mentor_profile.profile_image_url} />
+                      <AvatarImage src={mentorship.mentor.avatar_url || mentorship.mentor.mentor_profile.profile_image_url} />
                       <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-lg">
-                        {mentor.full_name.split(' ').map(n => n[0]).join('')}
+                        {mentorship.mentor.full_name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
 
@@ -150,13 +176,13 @@ export default function MyMentorsPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="text-lg font-semibold truncate">
-                            {mentor.full_name}
+                            {mentorship.mentor.full_name}
                           </h3>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {mentor.mentor_profile.headline}
+                            {mentorship.mentor.mentor_profile.headline}
                           </p>
                         </div>
-                        {mentor.mentor_profile.is_verified && (
+                        {mentorship.mentor.mentor_profile.is_verified && (
                           <Badge variant="secondary" className="flex items-center gap-1 shrink-0">
                             <Award className="h-3 w-3" />
                             Verified
@@ -164,10 +190,10 @@ export default function MyMentorsPage() {
                         )}
                       </div>
 
-                      {mentor.country && (
+                      {mentorship.mentor.country && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3" />
-                          {mentor.country}
+                          {mentorship.mentor.country}
                         </div>
                       )}
                     </div>
@@ -175,21 +201,21 @@ export default function MyMentorsPage() {
 
                   {/* Bio */}
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {mentor.mentor_profile.short_bio}
+                    {mentorship.mentor.mentor_profile.short_bio}
                   </p>
 
                   {/* Expertise */}
-                  {mentor.mentor_profile.areas_of_expertise.length > 0 && (
+                  {mentorship.mentor.mentor_profile.areas_of_expertise.length > 0 && (
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1.5">
-                        {mentor.mentor_profile.areas_of_expertise.slice(0, 3).map((area, idx) => (
+                        {mentorship.mentor.mentor_profile.areas_of_expertise.slice(0, 3).map((area, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {area}
                           </Badge>
                         ))}
-                        {mentor.mentor_profile.areas_of_expertise.length > 3 && (
+                        {mentorship.mentor.mentor_profile.areas_of_expertise.length > 3 && (
                           <Badge variant="outline" className="text-xs">
-                            +{mentor.mentor_profile.areas_of_expertise.length - 3} more
+                            +{mentorship.mentor.mentor_profile.areas_of_expertise.length - 3} more
                           </Badge>
                         )}
                       </div>
@@ -215,8 +241,8 @@ export default function MyMentorsPage() {
                       <Button 
                         size="sm"
                         onClick={() => {
-                          setSelectedMentorId(mentor.id);
-                          setSelectedMentorName(mentor.full_name);
+                          setSelectedMentorId(mentorship.mentor.id);
+                          setSelectedMentorName(mentorship.mentor.full_name);
                           setShowAppointmentModal(true);
                         }}
                         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
@@ -226,7 +252,7 @@ export default function MyMentorsPage() {
                       </Button>
                     </div>
                     <Button asChild variant="ghost" size="sm" className="group-hover:bg-purple-500/10">
-                      <Link href={`/mentors/${mentor.id}`}>
+                      <Link href={`/mentors/${mentorship.mentor.id}`}>
                         View Profile
                         <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
                       </Link>

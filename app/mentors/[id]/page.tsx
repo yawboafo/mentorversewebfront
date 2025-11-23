@@ -40,8 +40,25 @@ export default function MentorDetailPage() {
         ]);
         setMentor(mentorData);
         setContent(contentResponse.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch mentor:', error);
+        
+        // Show toast for specific errors
+        if (error.status === 404) {
+          toast.error('Mentor Not Found', {
+            description: 'This mentor profile does not exist or has been removed.',
+          });
+        } else if (error.status === 500) {
+          toast.error('Server Error', {
+            description: 'Unable to load mentor profile. Please try again later.',
+          });
+        } else if (error.message?.toLowerCase().includes('network')) {
+          toast.error('Connection Error', {
+            description: 'Please check your internet connection.',
+          });
+        }
+        
+        setMentor(null);
       } finally {
         setIsLoading(false);
       }
@@ -62,8 +79,28 @@ export default function MentorDetailPage() {
         setIsCheckingSubscription(true);
         const status = await mentorsApi.checkSubscriptionStatus(mentorId);
         setIsSubscribed(status.is_subscribed);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to check subscription status:', error);
+        
+        // Handle specific errors
+        if (error.status === 401) {
+          // User needs to re-authenticate
+          setIsSubscribed(false);
+        } else if (error.status === 404) {
+          // Mentor not found or endpoint not available
+          setIsSubscribed(false);
+          toast.error('Unable to check subscription status', {
+            description: 'This feature may be temporarily unavailable.',
+          });
+        } else if (error.status === 500) {
+          setIsSubscribed(false);
+          toast.error('Server error', {
+            description: 'Please try refreshing the page.',
+          });
+        } else {
+          // Default to not subscribed for any other error
+          setIsSubscribed(false);
+        }
       } finally {
         setIsCheckingSubscription(false);
       }
@@ -89,9 +126,40 @@ export default function MentorDetailPage() {
       });
     } catch (error: any) {
       console.error('Failed to subscribe:', error);
-      toast.error('Failed to subscribe', {
-        description: error.message || 'Please try again later.',
-      });
+      
+      // Handle specific error cases
+      if (error.status === 400 && error.message?.toLowerCase().includes('already subscribed')) {
+        toast.info('Already Subscribed', {
+          description: `You're already subscribed to ${mentor?.user.fullName}.`,
+        });
+        setIsSubscribed(true); // Update state to reflect actual status
+      } else if (error.status === 400 && error.message?.toLowerCase().includes('cannot subscribe to yourself')) {
+        toast.error('Cannot Subscribe', {
+          description: 'You cannot subscribe to your own profile.',
+        });
+      } else if (error.status === 401) {
+        toast.error('Authentication Required', {
+          description: 'Please log in to subscribe to this mentor.',
+        });
+        const returnUrl = `/mentors/${mentorId}`;
+        router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
+      } else if (error.status === 404) {
+        toast.error('Mentor Not Found', {
+          description: 'This mentor profile no longer exists.',
+        });
+      } else if (error.status === 500) {
+        toast.error('Server Error', {
+          description: 'Our servers are experiencing issues. Please try again in a moment.',
+        });
+      } else if (error.message?.toLowerCase().includes('network')) {
+        toast.error('Connection Error', {
+          description: 'Please check your internet connection and try again.',
+        });
+      } else {
+        toast.error('Failed to Subscribe', {
+          description: error.message || 'An unexpected error occurred. Please try again later.',
+        });
+      }
     } finally {
       setIsSubscribing(false);
     }
@@ -102,12 +170,42 @@ export default function MentorDetailPage() {
       setIsSubscribing(true);
       await mentorsApi.unsubscribeMentor(mentorId);
       setIsSubscribed(false);
-      toast.success('Unsubscribed successfully');
+      toast.success('Unsubscribed Successfully', {
+        description: `You've been unsubscribed from ${mentor?.user.fullName}.`,
+      });
     } catch (error: any) {
       console.error('Failed to unsubscribe:', error);
-      toast.error('Failed to unsubscribe', {
-        description: error.message || 'Please try again later.',
-      });
+      
+      // Handle specific error cases
+      if (error.status === 400 && error.message?.toLowerCase().includes('not subscribed')) {
+        toast.info('Not Subscribed', {
+          description: `You're not currently subscribed to ${mentor?.user.fullName}.`,
+        });
+        setIsSubscribed(false); // Update state to reflect actual status
+      } else if (error.status === 401) {
+        toast.error('Authentication Required', {
+          description: 'Please log in to manage your subscriptions.',
+        });
+        const returnUrl = `/mentors/${mentorId}`;
+        router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
+      } else if (error.status === 404) {
+        toast.error('Mentor Not Found', {
+          description: 'This mentor profile no longer exists.',
+        });
+        setIsSubscribed(false);
+      } else if (error.status === 500) {
+        toast.error('Server Error', {
+          description: 'Our servers are experiencing issues. Please try again in a moment.',
+        });
+      } else if (error.message?.toLowerCase().includes('network')) {
+        toast.error('Connection Error', {
+          description: 'Please check your internet connection and try again.',
+        });
+      } else {
+        toast.error('Failed to Unsubscribe', {
+          description: error.message || 'An unexpected error occurred. Please try again later.',
+        });
+      }
     } finally {
       setIsSubscribing(false);
     }
@@ -124,12 +222,24 @@ export default function MentorDetailPage() {
 
   if (!mentor) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 text-center">
-        <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Mentor not found</h2>
-        <Button asChild>
-          <Link href="/mentors">Browse Mentors</Link>
-        </Button>
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <Card className="p-12 text-center border-yellow-200 dark:border-yellow-900/30 bg-yellow-50/50 dark:bg-yellow-950/20">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mb-4">
+            <User className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Mentor Not Found</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            The mentor profile you're looking for doesn't exist or has been removed.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Button asChild variant="default">
+              <Link href="/mentors">Browse All Mentors</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard">Go to Dashboard</Link>
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
