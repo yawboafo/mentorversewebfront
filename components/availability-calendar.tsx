@@ -165,6 +165,13 @@ export function AvailabilityCalendar() {
       // Filter out days with no slots
       const filteredSchedule = schedule.filter((day) => day.slots.length > 0);
 
+      // Validate that at least one time slot exists
+      if (filteredSchedule.length === 0) {
+        alert('Please add at least one time slot before saving.');
+        setSaving(false);
+        return;
+      }
+
       await appointmentsApi.setAvailability({
         timezone,
         recurringSchedule: filteredSchedule,
@@ -174,9 +181,10 @@ export function AvailabilityCalendar() {
 
       alert('Availability saved successfully!');
       loadAvailability();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save availability:', error);
-      alert('Failed to save availability. Please try again.');
+      const errorMessage = error.message || 'Failed to save availability. Please try again.';
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
