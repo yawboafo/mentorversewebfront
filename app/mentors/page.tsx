@@ -19,7 +19,9 @@ import {
   Users,
   Sparkles,
   Award,
-  Target
+  Target,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { MentorProfileCard } from '@/components/mentor-profile-card';
 import { motion } from 'framer-motion';
@@ -60,6 +62,7 @@ export default function MentorsPage() {
   // Filters
   const [selectedExpertise, setSelectedExpertise] = useState('all');
   const [selectedExperience, setSelectedExperience] = useState('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -193,11 +196,21 @@ export default function MentorsPage() {
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           {/* Expertise Pills */}
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex md:hidden items-center gap-2 mb-3 w-full justify-between py-2 px-3 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filters</span>
+              </div>
+              {isFilterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <div className="hidden md:flex items-center gap-2 mb-3">
               <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Areas of Expertise</span>
             </div>
-            <div className="flex flex-wrap gap-2 max-h-32 md:max-h-none overflow-y-auto md:overflow-visible">
+            <div className={`flex-wrap gap-2 ${isFilterOpen ? 'flex' : 'hidden md:flex'}`}>
               {EXPERTISE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 return (

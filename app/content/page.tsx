@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { contentApi, ContentQuery } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
-import { Search, Filter, Award, Briefcase, Lightbulb, TrendingUp, Users, Target } from 'lucide-react';
+import { Search, Filter, Award, Briefcase, Lightbulb, TrendingUp, Users, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { CourseLearningCard } from '@/components/course-learning-card';
 import { motion } from 'framer-motion';
 
@@ -41,6 +41,7 @@ export default function ContentPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     fetchContent();
@@ -163,11 +164,21 @@ export default function ContentPage() {
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           {/* Category Pills */}
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex md:hidden items-center gap-2 mb-3 w-full justify-between py-2 px-3 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filters</span>
+              </div>
+              {isFilterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            <div className="hidden md:flex items-center gap-2 mb-3">
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Categories</span>
             </div>
-            <div className="flex flex-wrap gap-2 max-h-32 md:max-h-none overflow-y-auto md:overflow-visible">
+            <div className={`flex-wrap gap-2 ${isFilterOpen ? 'flex' : 'hidden md:flex'}`}>
               {CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 return (
