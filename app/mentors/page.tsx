@@ -17,7 +17,9 @@ import {
   Sparkles,
   Award,
   Target,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { MentorProfileCard } from '@/components/mentor-profile-card';
 import { motion } from 'framer-motion';
@@ -58,6 +60,7 @@ export default function MentorsPage() {
   // Filters
   const [selectedExpertise, setSelectedExpertise] = useState('all');
   const [selectedExperience, setSelectedExperience] = useState('all');
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -188,14 +191,37 @@ export default function MentorsPage() {
 
       {/* Gen Z Pill Filters Section */}
       <section className="sticky top-0 z-30 border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          {/* Expertise Filter Pills */}
-          <div className="mb-4">
-            <div className="mb-3 flex items-center gap-2">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
+          {/* Mobile Filter Toggle */}
+          <button
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            className="mb-3 flex w-full items-center justify-between rounded-xl bg-muted/50 px-4 py-3 transition-colors hover:bg-muted md:hidden"
+          >
+            <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">Expertise</span>
+              <span className="text-sm font-semibold">Filters</span>
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="h-5 w-5 rounded-full p-0 text-xs">
+                  •
+                </Badge>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            {isFiltersExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+
+          {/* Filters Content */}
+          <div className={`space-y-4 ${isFiltersExpanded ? 'block' : 'hidden'} md:block`}>
+            {/* Expertise Filter Pills */}
+            <div>
+              <div className="mb-3 hidden items-center gap-2 md:flex">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">Expertise</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
               {EXPERTISE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 const isSelected = selectedExpertise === category.value;
@@ -222,12 +248,12 @@ export default function MentorsPage() {
                     {category.label}
                   </motion.button>
                 );
-              })}
+              )}
+              </div>
             </div>
-          </div>
 
-          {/* Experience Filter Pills */}
-          <div className="flex flex-wrap items-center gap-3">
+            {/* Experience Filter Pills */}
+            <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <Award className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-semibold text-foreground">Experience</span>
@@ -256,7 +282,9 @@ export default function MentorsPage() {
                 </motion.button>
               );
             })}
+            </div>
 
+            {/* Clear Filters */}
             {hasActiveFilters && (
               <>
                 <div className="mx-2 h-6 w-px bg-border" />
