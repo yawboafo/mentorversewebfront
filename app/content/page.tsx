@@ -167,7 +167,7 @@ export default function ContentPage() {
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Categories</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-32 md:max-h-none overflow-y-auto md:overflow-visible">
               {CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 return (

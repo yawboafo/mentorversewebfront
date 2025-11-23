@@ -126,7 +126,7 @@ export function CourseVideoCard({ content, priority = false, variant = 'default'
 
             {/* Level Badge */}
             {content.level && (
-              <Badge variant="secondary" className="text-xs capitalize">
+              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs capitalize">
                 {content.level}
               </Badge>
             )}

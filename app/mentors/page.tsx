@@ -197,7 +197,7 @@ export default function MentorsPage() {
               <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Areas of Expertise</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-32 md:max-h-none overflow-y-auto md:overflow-visible">
               {EXPERTISE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 return (

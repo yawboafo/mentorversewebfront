@@ -79,7 +79,7 @@ export function CourseLearningCard({ content, priority = false }: CourseLearning
             {/* Level badge - top left */}
             {content.level && (
               <div className="absolute top-3 left-3">
-                <Badge variant="secondary" className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm text-xs capitalize">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/90 dark:text-blue-300 backdrop-blur-sm text-xs capitalize border border-blue-200 dark:border-blue-800">
                   {content.level}
                 </Badge>
               </div>
