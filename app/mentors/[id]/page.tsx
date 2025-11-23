@@ -226,7 +226,7 @@ export default function MentorDetailPage() {
                   size="lg"
                   onClick={() => setShowAppointmentModal(true)}
                   variant="outline"
-                  className="border-2 border-white bg-white/10 text-white hover:bg-white hover:text-orange-600 font-semibold px-8 transition-all"
+                  className="border-2 border-white !bg-white/10 !text-white hover:!bg-white hover:!text-orange-600 font-semibold px-8 transition-all"
                 >
                   <Calendar className="h-5 w-5 mr-2" />
                   Book Session
