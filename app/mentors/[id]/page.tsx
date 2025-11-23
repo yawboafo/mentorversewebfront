@@ -4,18 +4,24 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
-import { User, Globe, Briefcase, Play, MapPin, MessageSquare, Award, Calendar, Video, Check, UserPlus, Loader2 } from 'lucide-react';
+import { 
+  User, Globe, Briefcase, MapPin, MessageSquare, Award, Calendar,
+  Check, UserPlus, Loader2, Star, TrendingUp, Users, BookOpen,
+  Video, Heart, Sparkles, Quote, Target, GraduationCap
+} from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { BookAppointmentModal } from '@/components/book-appointment-modal';
+import { CourseLearningCard } from '@/components/course-learning-card';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 export default function MentorDetailPage() {
   const params = useParams();
@@ -43,19 +49,10 @@ export default function MentorDetailPage() {
       } catch (error: any) {
         console.error('Failed to fetch mentor:', error);
         
-        // Show toast for specific errors
         if (error.status === 404) {
-          toast.error('Mentor Not Found', {
-            description: 'This mentor profile does not exist or has been removed.',
-          });
+          toast.error('Mentor Not Found');
         } else if (error.status === 500) {
-          toast.error('Server Error', {
-            description: 'Unable to load mentor profile. Please try again later.',
-          });
-        } else if (error.message?.toLowerCase().includes('network')) {
-          toast.error('Connection Error', {
-            description: 'Please check your internet connection.',
-          });
+          toast.error('Server Error');
         }
         
         setMentor(null);
@@ -67,40 +64,16 @@ export default function MentorDetailPage() {
     fetchData();
   }, [mentorId]);
 
-  // Check subscription status when user is logged in
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!user || !mentorId) return;
-      
-      // Don't check if user is the mentor themselves
-      if (user.id === mentorId) return;
+      if (!user || !mentorId || user.id === mentorId) return;
 
       try {
         setIsCheckingSubscription(true);
         const status = await mentorsApi.checkSubscriptionStatus(mentorId);
         setIsSubscribed(status.is_subscribed);
-      } catch (error: any) {
-        console.error('Failed to check subscription status:', error);
-        
-        // Handle specific errors
-        if (error.status === 401) {
-          // User needs to re-authenticate
-          setIsSubscribed(false);
-        } else if (error.status === 404) {
-          // Mentor not found or endpoint not available
-          setIsSubscribed(false);
-          toast.error('Unable to check subscription status', {
-            description: 'This feature may be temporarily unavailable.',
-          });
-        } else if (error.status === 500) {
-          setIsSubscribed(false);
-          toast.error('Server error', {
-            description: 'Please try refreshing the page.',
-          });
-        } else {
-          // Default to not subscribed for any other error
-          setIsSubscribed(false);
-        }
+      } catch (error) {
+        setIsSubscribed(false);
       } finally {
         setIsCheckingSubscription(false);
       }
@@ -111,9 +84,7 @@ export default function MentorDetailPage() {
 
   const handleSubscribe = async () => {
     if (!user) {
-      // Redirect to login with return URL
-      const returnUrl = `/mentors/${mentorId}`;
-      router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/mentors/${mentorId}`)}`);
       return;
     }
 
@@ -121,434 +92,307 @@ export default function MentorDetailPage() {
       setIsSubscribing(true);
       await mentorsApi.subscribeMentor(mentorId);
       setIsSubscribed(true);
-      toast.success(`You're now subscribed to ${mentor?.user.fullName}! 🎉`, {
-        description: 'You can now book appointments and access exclusive content.',
-      });
+      toast.success(`You're now subscribed to ${mentor?.user.fullName}!`);
     } catch (error: any) {
-      console.error('Failed to subscribe:', error);
-      
-      // Handle specific error cases
       if (error.status === 400 && error.message?.toLowerCase().includes('already subscribed')) {
-        toast.info('Already Subscribed', {
-          description: `You're already subscribed to ${mentor?.user.fullName}.`,
-        });
-        setIsSubscribed(true); // Update state to reflect actual status
-      } else if (error.status === 400 && error.message?.toLowerCase().includes('cannot subscribe to yourself')) {
-        toast.error('Cannot Subscribe', {
-          description: 'You cannot subscribe to your own profile.',
-        });
-      } else if (error.status === 401) {
-        toast.error('Authentication Required', {
-          description: 'Please log in to subscribe to this mentor.',
-        });
-        const returnUrl = `/mentors/${mentorId}`;
-        router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
-      } else if (error.status === 404) {
-        toast.error('Mentor Not Found', {
-          description: 'This mentor profile no longer exists.',
-        });
-      } else if (error.status === 500) {
-        toast.error('Server Error', {
-          description: 'Our servers are experiencing issues. Please try again in a moment.',
-        });
-      } else if (error.message?.toLowerCase().includes('network')) {
-        toast.error('Connection Error', {
-          description: 'Please check your internet connection and try again.',
-        });
+        setIsSubscribed(true);
       } else {
-        toast.error('Failed to Subscribe', {
-          description: error.message || 'An unexpected error occurred. Please try again later.',
-        });
+        toast.error('Failed to subscribe');
       }
     } finally {
       setIsSubscribing(false);
     }
   };
 
-  const handleUnsubscribe = async () => {
-    try {
-      setIsSubscribing(true);
-      await mentorsApi.unsubscribeMentor(mentorId);
-      setIsSubscribed(false);
-      toast.success('Unsubscribed Successfully', {
-        description: `You've been unsubscribed from ${mentor?.user.fullName}.`,
-      });
-    } catch (error: any) {
-      console.error('Failed to unsubscribe:', error);
-      
-      // Handle specific error cases
-      if (error.status === 400 && error.message?.toLowerCase().includes('not subscribed')) {
-        toast.info('Not Subscribed', {
-          description: `You're not currently subscribed to ${mentor?.user.fullName}.`,
-        });
-        setIsSubscribed(false); // Update state to reflect actual status
-      } else if (error.status === 401) {
-        toast.error('Authentication Required', {
-          description: 'Please log in to manage your subscriptions.',
-        });
-        const returnUrl = `/mentors/${mentorId}`;
-        router.push(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
-      } else if (error.status === 404) {
-        toast.error('Mentor Not Found', {
-          description: 'This mentor profile no longer exists.',
-        });
-        setIsSubscribed(false);
-      } else if (error.status === 500) {
-        toast.error('Server Error', {
-          description: 'Our servers are experiencing issues. Please try again in a moment.',
-        });
-      } else if (error.message?.toLowerCase().includes('network')) {
-        toast.error('Connection Error', {
-          description: 'Please check your internet connection and try again.',
-        });
-      } else {
-        toast.error('Failed to Unsubscribe', {
-          description: error.message || 'An unexpected error occurred. Please try again later.',
-        });
-      }
-    } finally {
-      setIsSubscribing(false);
-    }
+  const getInitials = (name: string) => {
+    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <Skeleton className="h-48 w-full mb-8" />
-        <Skeleton className="h-64 w-full" />
+      <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <Skeleton className="h-96 w-full mb-8 rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (!mentor) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <Card className="p-12 text-center border-yellow-200 dark:border-yellow-900/30 bg-yellow-50/50 dark:bg-yellow-950/20">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mb-4">
-            <User className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Mentor Not Found</h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            The mentor profile you're looking for doesn't exist or has been removed.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <Button asChild variant="default">
-              <Link href="/mentors">Browse All Mentors</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/dashboard">Go to Dashboard</Link>
-            </Button>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 text-center">
+          <User className="h-20 w-20 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Mentor not found</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">This mentor profile may have been removed.</p>
+          <Button asChild size="lg" className="bg-orange-600 hover:bg-orange-700">
+            <Link href="/mentors">Browse All Mentors</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Hero Section with Profile Image and Video */}
-      <Card className="mb-8 overflow-hidden">
-        <div className="relative h-64 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500">
-          {/* Profile Avatar */}
-          <div className="absolute -bottom-16 left-8 z-10">
-            <Avatar className="h-32 w-32 border-4 border-white dark:border-gray-900 shadow-2xl">
-              <AvatarImage 
-                src={mentor.user.avatarUrl || mentor.profileImageUrl || undefined} 
-                alt={mentor.user.fullName}
-              />
-              <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                {getInitials(mentor.user.fullName)}
-              </AvatarFallback>
-            </Avatar>
+    <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+      {/* Premium Hero Section */}
+      <div className="bg-gradient-to-br from-orange-600 via-amber-600 to-orange-700 dark:from-orange-900 dark:via-amber-900 dark:to-orange-950 text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.3),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.2),transparent_50%)]" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+            {/* Mentor Photo */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-full blur-3xl" />
+              <Avatar className="relative h-48 w-48 border-8 border-white/30 shadow-2xl">
+                <AvatarImage 
+                  src={mentor.profileImageUrl || mentor.user?.avatarUrl || undefined}
+                  alt={mentor.user?.fullName || mentor.headline}
+                  className="object-cover"
+                />
+                <AvatarFallback className="text-6xl font-bold bg-gradient-to-br from-orange-500 to-amber-600 text-white">
+                  {getInitials(mentor.user?.fullName || mentor.headline)}
+                </AvatarFallback>
+              </Avatar>
+              {mentor.isVerified && (
+                <div className="absolute bottom-2 right-2 bg-blue-600 p-2 rounded-full shadow-lg">
+                  <Award className="h-6 w-6 text-white fill-white" />
+                </div>
+              )}
+            </motion.div>
+
+            {/* Mentor Info */}
+            <div className="flex-1 text-center lg:text-left">
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-5xl md:text-6xl font-bold mb-3"
+              >
+                {mentor.user?.fullName || 'Mentor'}
+              </motion.h1>
+              
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-2xl md:text-3xl text-orange-100 mb-4 font-light"
+              >
+                {mentor.headline}
+              </motion.p>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-lg text-white/90 max-w-2xl mb-6"
+              >
+                "Helping entrepreneurs and professionals build real-world skills and achieve their goals through personalized mentorship."
+              </motion.p>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap gap-4 justify-center lg:justify-start"
+              >
+                {user?.id !== mentorId && (
+                  <Button
+                    size="lg"
+                    onClick={handleSubscribe}
+                    disabled={isSubscribing || isCheckingSubscription || isSubscribed}
+                    className="bg-white text-orange-600 hover:bg-orange-50 font-semibold px-8 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    {isSubscribing ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : isSubscribed ? (
+                      <Check className="h-5 w-5 mr-2" />
+                    ) : (
+                      <UserPlus className="h-5 w-5 mr-2" />
+                    )}
+                    {isSubscribed ? 'Subscribed' : 'Subscribe'}
+                  </Button>
+                )}
+                <Button
+                  size="lg"
+                  onClick={() => setShowAppointmentModal(true)}
+                  variant="outline"
+                  className="border-2 border-white text-white hover:bg-white/10 font-semibold px-8"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Book Session
+                </Button>
+              </motion.div>
+            </div>
           </div>
         </div>
-        
-        <CardContent className="pt-20 pb-6">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{mentor.user.fullName}</h1>
-              <p className="text-lg text-muted-foreground mb-4">{mentor.headline}</p>
-              
-              <div className="flex flex-wrap gap-3">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Briefcase className="h-3 w-3" />
-                  {mentor.experienceYears} years exp.
-                </Badge>
-                {mentor.isVerified && (
-                  <Badge variant="default" className="bg-blue-500">
-                    <Award className="h-3 w-3 mr-1" />
-                    Verified
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {/* Subscribe/Subscribed Button */}
-              {user?.id !== mentorId && (
-                <>
-                  {!user ? (
-                    <Button 
-                      size="lg" 
-                      onClick={handleSubscribe}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Login to Subscribe
-                    </Button>
-                  ) : isCheckingSubscription ? (
-                    <Button size="lg" disabled>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Checking...
-                    </Button>
-                  ) : isSubscribed ? (
-                    <>
-                      <Button 
-                        size="lg" 
-                        variant="secondary"
-                        disabled
-                        className="gap-2"
-                      >
-                        <Check className="h-4 w-4" />
-                        Subscribed
-                      </Button>
-                      <Button 
-                        size="lg"
-                        onClick={() => setShowAppointmentModal(true)}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Book Appointment
-                      </Button>
-                    </>
-                  ) : (
-                    <Button 
-                      size="lg" 
-                      onClick={handleSubscribe}
-                      disabled={isSubscribing}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    >
-                      {isSubscribing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Subscribing...
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Subscribe to this Mentor
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  {isSubscribed && (
-                    <Button 
-                      size="lg"
-                      variant="ghost"
-                      onClick={handleUnsubscribe}
-                      disabled={isSubscribing}
-                    >
-                      Unsubscribe
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+      </div>
 
-          {/* Intro Video */}
-          {mentor.introVideoUrl && (
-            <Card className="mb-6 overflow-hidden">
-              <div className="aspect-video bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-600 text-white mb-3">
-                    <Play className="h-8 w-8 fill-white" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">Watch intro video</p>
-                  <p className="text-xs text-muted-foreground mt-1">{mentor.introVideoUrl}</p>
-                </div>
-              </div>
-            </Card>
-          )}
-          
-          {/* About Section */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <User className="h-5 w-5" />
-                About {mentor.user.fullName}
-              </h2>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                {mentor.longBio}
-              </p>
-            </div>
-            
-            <Separator />
-            
-            {/* Expertise */}
-            <div>
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Areas of Expertise
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {mentor.areasOfExpertise?.map((area) => (
-                  <Badge key={area} className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                    {area}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <Separator />
-            
-            {/* Languages & Social */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Languages
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {mentor.languages?.map((lang) => (
-                    <Badge key={lang} variant="outline">
-                      {lang}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              {Object.keys(mentor.socialLinks || {}).length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-3">Connect</h3>
-                  <div className="space-y-2">
-                    {Object.entries(mentor.socialLinks).map(([platform, url]) => (
-                      <a
-                        key={platform}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline block capitalize"
-                      >
-                        {platform}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mentor's Content */}
-      <section>
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <Video className="h-6 w-6" />
-          Courses & Frameworks by {mentor.user.fullName}
-        </h2>
-        
-        {content.length === 0 ? (
-          <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-dashed">
-            <CardContent className="py-16 text-center">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground text-lg">This mentor hasn't published any content yet.</p>
-              <p className="text-sm text-muted-foreground mt-2">Check back soon for new courses!</p>
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Stats Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 -mt-16 relative z-10"
+        >
+          <Card className="border-0 shadow-lg bg-white dark:bg-zinc-900">
+            <CardContent className="p-6 text-center">
+              <Briefcase className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{mentor.experienceYears}+</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Years Experience</p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {content.map((item) => (
-              <Link key={item.id} href={`/content/${item.id}`}>
-                <Card className="group h-full overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-purple-200 dark:hover:border-purple-800">
-                  {/* Cover Image/Video */}
-                  <div className="relative h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      {item.mediaType === 'video' ? (
-                        <div className="text-white">
-                          <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Play className="h-8 w-8 fill-white" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-6xl opacity-20">📚</div>
-                      )}
-                    </div>
-                    
-                    {/* Price badge */}
-                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full font-bold text-sm">
-                      ${item.price}
-                    </div>
-                    
-                    {/* Type badge */}
-                    <div className="absolute top-3 left-3">
-                      <Badge className="bg-purple-600 hover:bg-purple-700">
-                        {item.contentType}
-                      </Badge>
-                    </div>
+
+          <Card className="border-0 shadow-lg bg-white dark:bg-zinc-900">
+            <CardContent className="p-6 text-center">
+              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{content.length}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Courses Created</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-white dark:bg-zinc-900">
+            <CardContent className="p-6 text-center">
+              <Star className="h-8 w-8 text-amber-500 mx-auto mb-2 fill-amber-500" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">5.0</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Rating</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-white dark:bg-zinc-900">
+            <CardContent className="p-6 text-center">
+              <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{mentor.areasOfExpertise?.length || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Expertise Areas</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* About Section */}
+            <Card className="border-0 shadow-md bg-white dark:bg-zinc-900">
+              <CardContent className="p-8">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                  <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                    <User className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                   </div>
+                  About {mentor.user?.fullName?.split(' ')[0] || 'Me'}
+                </h2>
+                <div className="space-y-4 text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                  <p>{mentor.shortBio || mentor.longBio || 'An experienced professional dedicated to helping others achieve their goals through personalized mentorship and guidance.'}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <CardContent className="p-4 space-y-3">
-                    <div>
-                      <h3 className="font-bold text-lg line-clamp-2 group-hover:text-purple-600 transition-colors mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {item.description}
-                      </p>
+            {/* Expertise Tags */}
+            {mentor.areasOfExpertise && mentor.areasOfExpertise.length > 0 && (
+              <Card className="border-0 shadow-md bg-white dark:bg-zinc-900">
+                <CardContent className="p-8">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                      <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
+                    Areas of Expertise
+                  </h2>
+                  <div className="flex flex-wrap gap-3">
+                    {mentor.areasOfExpertise.map((area, idx) => (
+                      <Badge 
+                        key={idx}
+                        className="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800 hover:shadow-md transition-shadow"
+                      >
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {item.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{item.tags.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-                      {item.estimatedDuration && (
-                        <span>{item.estimatedDuration}</span>
-                      )}
-                      {item.level && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.level}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {/* Courses Section */}
+            {content.length > 0 && (
+              <section>
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    Learn with {mentor.user?.fullName?.split(' ')[0] || 'this mentor'}
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {content.length} {content.length === 1 ? 'course' : 'courses'} available
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {content.map((course) => (
+                    <CourseLearningCard key={course.id} content={course} />
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
-        )}
-      </section>
 
-      {/* Book Appointment Modal */}
-      {mentor && (
-        <BookAppointmentModal
-          isOpen={showAppointmentModal}
-          onClose={() => setShowAppointmentModal(false)}
-          mentorId={mentorId}
-          mentorName={mentor.user.fullName}
-        />
-      )}
+          {/* Right Sidebar */}
+          <div className="space-y-6">
+            {/* Contact Card */}
+            <Card className="border-2 border-orange-200 dark:border-orange-800 shadow-lg bg-white dark:bg-zinc-900 sticky top-8">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Connect</h3>
+                
+                <Button
+                  onClick={() => setShowAppointmentModal(true)}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                  size="lg"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Book a Session
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20 font-semibold"
+                  size="lg"
+                >
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  Send Message
+                </Button>
+
+                <Separator />
+
+                {mentor.user?.country && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                    <MapPin className="h-4 w-4" />
+                    <span>{mentor.user.country}</span>
+                  </div>
+                )}
+
+                {mentor.languages && mentor.languages.length > 0 && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                    <Globe className="h-4 w-4" />
+                    <span>{mentor.languages.join(', ')}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      <BookAppointmentModal
+        isOpen={showAppointmentModal}
+        mentorId={mentorId}
+        mentorName={mentor?.user?.fullName || mentor?.headline || 'Mentor'}
+        onClose={() => setShowAppointmentModal(false)}
+      />
     </div>
   );
 }
