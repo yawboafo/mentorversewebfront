@@ -143,8 +143,40 @@ export function AppointmentsManager({ userRole }: AppointmentsManagerProps) {
             <div className="grid gap-4">
               {appointments.map((appointment) => {
                 const otherUser = userRole === 'mentor' ? appointment.mentee : appointment.mentor;
-                const startTime = parseISO(appointment.startTime);
-                const endTime = parseISO(appointment.endTime);
+                const apptData = appointment as any;
+                
+                // Handle both ISO format and backend's format
+                let dateDisplay: string;
+                let timeDisplay: string;
+                
+                try {
+                  if (apptData.scheduledDate && apptData.startTime && apptData.startTime.includes(':')) {
+                    // Backend format: separate date and time fields
+                    dateDisplay = format(parseISO(apptData.scheduledDate), 'EEEE, MMMM d, yyyy');
+                    
+                    // Parse start time
+                    const [startHours, startMinutes] = apptData.startTime.split(':').map(Number);
+                    const startAmpm = startHours >= 12 ? 'PM' : 'AM';
+                    const startDisplayHour = startHours % 12 || 12;
+                    
+                    // Parse end time
+                    const [endHours, endMinutes] = apptData.endTime.split(':').map(Number);
+                    const endAmpm = endHours >= 12 ? 'PM' : 'AM';
+                    const endDisplayHour = endHours % 12 || 12;
+                    
+                    timeDisplay = `${startDisplayHour}:${String(startMinutes).padStart(2, '0')} ${startAmpm} - ${endDisplayHour}:${String(endMinutes).padStart(2, '0')} ${endAmpm}`;
+                  } else {
+                    // ISO format fallback
+                    const startTime = parseISO(appointment.startTime);
+                    const endTime = parseISO(appointment.endTime);
+                    dateDisplay = format(startTime, 'EEEE, MMMM d, yyyy');
+                    timeDisplay = `${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}`;
+                  }
+                } catch (error) {
+                  console.error('Error parsing appointment times:', error, appointment);
+                  dateDisplay = 'Date not available';
+                  timeDisplay = 'Time not available';
+                }
 
                 return (
                   <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
@@ -173,13 +205,11 @@ export function AppointmentsManager({ userRole }: AppointmentsManagerProps) {
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{format(startTime, 'EEEE, MMMM d, yyyy')}</span>
+                          <span>{dateDisplay}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
-                          </span>
+                          <span>{timeDisplay}</span>
                         </div>
                       </div>
 

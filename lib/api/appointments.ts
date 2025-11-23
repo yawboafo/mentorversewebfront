@@ -323,8 +323,28 @@ export const appointmentsApi = {
    */
   async hasMentorSetUpAvailability(mentorId: string): Promise<boolean> {
     try {
-      const availability = await this.getMentorAvailability(mentorId);
-      return availability.recurringSchedule.length > 0;
+      const response = await this.getMentorAvailability(mentorId);
+      
+      // Handle wrapped response {success: true, data: [...]}
+      const availabilityData = (response as any).data || response;
+      const availability = (response as any).success ? availabilityData : response;
+      
+      // Check if it's a direct array (flat structure)
+      if (Array.isArray(availability)) {
+        return availability.length > 0;
+      }
+      
+      // Check nested structure
+      if (availability.recurringSchedule && Array.isArray(availability.recurringSchedule)) {
+        return availability.recurringSchedule.length > 0;
+      }
+      
+      // Check availability field
+      if ((availability as any).availability && Array.isArray((availability as any).availability)) {
+        return (availability as any).availability.length > 0;
+      }
+      
+      return false;
     } catch (error: any) {
       if (error.status === 404) return false;
       throw error;

@@ -68,22 +68,78 @@ export function AvailabilityCalendar() {
       }
       
       const user = JSON.parse(userStr);
-      const availability = await appointmentsApi.getMentorAvailability(user.id);
+      const response = await appointmentsApi.getMentorAvailability(user.id);
       
-      setAvailability(availability);
-      setTimezone(availability.timezone || 'America/New_York');
-      setBufferTime(availability.bufferTimeBetweenSessions || 15);
-      setAdvanceBookingDays(availability.advanceBookingDays || 30);
+      console.log('Loaded availability from backend:', response);
       
-      // Ensure recurringSchedule is an array and fill in missing days
-      const existingSchedule = Array.isArray(availability.recurringSchedule) 
-        ? availability.recurringSchedule 
-        : [];
+      // Handle wrapped response {success: true, data: [...]}
+      const availabilityData = (response as any).data || response;
+      const availability = (response as any).success ? availabilityData : response;
+      
+      setAvailability(availability as any);
+      
+      // Extract settings from the response or array
+      if (Array.isArray(availability)) {
+        // Backend returned flat array directly
+        const firstSlot = availability[0];
+        if (firstSlot) {
+          setTimezone(firstSlot.timezone || 'America/New_York');
+        }
+      } else {
+        // Backend returned object with settings
+        setTimezone(availability.timezone || 'America/New_York');
+        setBufferTime(availability.bufferTimeBetweenSessions || 15);
+        setAdvanceBookingDays(availability.advanceBookingDays || 30);
+      }
+      
+      // Handle different data structures
+      let existingSchedule: any[] = [];
+      
+      if (Array.isArray(availability)) {
+        // Backend returned flat array - convert to nested
+        console.log('Converting flat array to nested structure');
+        const grouped = availability.reduce((acc: any, slot: any) => {
+          const day = slot.dayOfWeek;
+          if (!acc[day]) {
+            acc[day] = { dayOfWeek: day, slots: [] };
+          }
+          acc[day].slots.push({
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          });
+          return acc;
+        }, {});
+        existingSchedule = Object.values(grouped);
+      } else if (Array.isArray(availability.recurringSchedule)) {
+        // Old nested structure
+        console.log('Using nested structure');
+        existingSchedule = availability.recurringSchedule;
+      } else if (Array.isArray((availability as any).availability)) {
+        // Another flat structure variant
+        console.log('Converting availability field to nested');
+        const flatAvailability = (availability as any).availability;
+        const grouped = flatAvailability.reduce((acc: any, slot: any) => {
+          const day = slot.dayOfWeek;
+          if (!acc[day]) {
+            acc[day] = { dayOfWeek: day, slots: [] };
+          }
+          acc[day].slots.push({
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          });
+          return acc;
+        }, {});
+        existingSchedule = Object.values(grouped);
+      }
+      
+      console.log('Existing schedule:', existingSchedule);
+      
       const fullSchedule = DAYS.map((day) => {
         const existing = existingSchedule.find((s: any) => s && s.dayOfWeek === day);
         return existing || { dayOfWeek: day, slots: [] };
       });
       
+      console.log('Full schedule with all days:', fullSchedule);
       setSchedule(fullSchedule);
     } catch (error: any) {
       if (error.status === 404) {
@@ -172,17 +228,37 @@ export function AvailabilityCalendar() {
         return;
       }
 
-      await appointmentsApi.setAvailability({
-        timezone,
-        recurringSchedule: filteredSchedule,
+      // Flatten slots into individual availability entries as backend expects
+      const availabilityArray = filteredSchedule.flatMap(day => 
+        day.slots.map(slot => ({
+          dayOfWeek: day.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          timezone: timezone,
+        }))
+      );
+
+      const payload = {
+        availability: availabilityArray,
         bufferTimeBetweenSessions: bufferTime,
-        advanceBookingDays,
-      });
+        advanceBookingDays: advanceBookingDays,
+      };
+
+      console.log('Sending availability payload:', JSON.stringify(payload, null, 2));
+
+      await appointmentsApi.setAvailability(payload as any);
 
       alert('Availability saved successfully!');
-      loadAvailability();
+      // Reload to get the saved data from backend
+      await loadAvailability();
     } catch (error: any) {
       console.error('Failed to save availability:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        response: error.response
+      });
       const errorMessage = error.message || 'Failed to save availability. Please try again.';
       alert(errorMessage);
     } finally {
@@ -202,8 +278,68 @@ export function AvailabilityCalendar() {
     );
   }
 
+  // Calculate total available hours per week
+  const totalSlotsCount = schedule.reduce((total, day) => total + day.slots.length, 0);
+  const hasAvailability = totalSlotsCount > 0;
+
   return (
     <div className="space-y-6">
+      {/* Current Availability Summary */}
+      {hasAvailability && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  Current Availability
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  You have {totalSlotsCount} time slot{totalSlotsCount !== 1 ? 's' : ''} configured
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                Active
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {schedule
+                .filter(day => day.slots.length > 0)
+                .map((day) => (
+                  <div key={day.dayOfWeek} className="rounded-lg border bg-background p-3">
+                    <div className="font-semibold text-sm mb-2">{DAY_LABELS[day.dayOfWeek]}</div>
+                    <div className="space-y-1">
+                      {day.slots.map((slot, idx) => (
+                        <div key={idx} className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {slot.startTime} - {slot.endTime}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <CalendarIcon className="h-4 w-4" />
+                Timezone: {timezone}
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                Buffer: {bufferTime} min
+              </div>
+              <div className="flex items-center gap-1">
+                <Badge variant="outline" className="text-xs">
+                  Advance booking: {advanceBookingDays} days
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>General Settings</CardTitle>

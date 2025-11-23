@@ -38,18 +38,38 @@ export function BookAppointmentModal({ isOpen, onClose, mentorId, mentorName }: 
     try {
       setLoadingSlots(true);
       
+      console.log('Checking availability for mentor:', mentorId);
+      
       // Check if mentor has availability set up
       const hasSetup = await appointmentsApi.hasMentorSetUpAvailability(mentorId);
+      console.log('Mentor has availability setup:', hasSetup);
       setHasAvailability(hasSetup);
 
       if (!hasSetup) {
+        console.log('No availability setup, stopping here');
         setLoadingSlots(false);
         return;
       }
 
       // Load available slots for the next 14 days
-      const slots = await appointmentsApi.getAvailableSlotsForNextDays(mentorId, 14, duration);
-      setAvailableSlots(slots);
+      console.log('Loading available slots for next 14 days, duration:', duration);
+      const response = await appointmentsApi.getAvailableSlotsForNextDays(mentorId, 14, duration);
+      console.log('Available slots response:', response);
+      console.log('Response type:', typeof response, 'Is array:', Array.isArray(response));
+      
+      // Handle wrapped response format {success: true, data: [...]}
+      const slotsData = (response as any).data || response;
+      const slots = (response as any).success ? slotsData : response;
+      
+      console.log('Extracted slots:', slots);
+      console.log('Slots is array:', Array.isArray(slots), 'Length:', Array.isArray(slots) ? slots.length : 'N/A');
+      
+      if (Array.isArray(slots) && slots.length > 0) {
+        console.log('First slot example:', slots[0]);
+        console.log('First slot startTime:', slots[0].startTime, 'type:', typeof slots[0].startTime);
+      }
+      
+      setAvailableSlots(Array.isArray(slots) ? slots : []);
     } catch (error) {
       console.error('Failed to load available slots:', error);
       toast.error('Failed to load available time slots');
@@ -70,12 +90,29 @@ export function BookAppointmentModal({ isOpen, onClose, mentorId, mentorName }: 
     setIsSubmitting(true);
 
     try {
-      await appointmentsApi.bookAppointment({
+      const slotData = selectedSlot as any;
+      
+      // Backend expects: {mentorId, scheduledDate, startTime, endTime, title}
+      // Calculate end time based on duration
+      const [hours, minutes] = slotData.startTime.split(':').map(Number);
+      const startMinutes = hours * 60 + minutes;
+      const endMinutes = startMinutes + duration;
+      const endHours = Math.floor(endMinutes / 60);
+      const endMins = endMinutes % 60;
+      const endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+      
+      const bookingData = {
         mentorId,
-        startTime: selectedSlot.startTime,
-        duration,
+        scheduledDate: slotData.date,
+        startTime: slotData.startTime,
+        endTime: endTime,
+        title: `Session with ${mentorName}`,
         notes: notes.trim() || undefined,
-      });
+      };
+      
+      console.log('Booking appointment with data:', bookingData);
+      
+      await appointmentsApi.bookAppointment(bookingData as any);
 
       toast.success('Appointment booked successfully!', {
         description: `Your session with ${mentorName} has been scheduled.`,
@@ -102,11 +139,19 @@ export function BookAppointmentModal({ isOpen, onClose, mentorId, mentorName }: 
   const groupSlotsByDate = () => {
     const grouped: Record<string, AvailableSlot[]> = {};
     availableSlots.forEach((slot) => {
-      const date = format(parseISO(slot.startTime), 'yyyy-MM-dd');
-      if (!grouped[date]) {
-        grouped[date] = [];
+      try {
+        // Backend returns {date: '2025-11-24', startTime: '09:00', ...}
+        // We need to use the date field for grouping
+        const slotData = slot as any;
+        const dateStr = slotData.date || format(parseISO(slot.startTime), 'yyyy-MM-dd');
+        
+        if (!grouped[dateStr]) {
+          grouped[dateStr] = [];
+        }
+        grouped[dateStr].push(slot);
+      } catch (error) {
+        console.error('Error grouping slot:', slot, error);
       }
-      grouped[date].push(slot);
     });
     return grouped;
   };
@@ -185,7 +230,27 @@ export function BookAppointmentModal({ isOpen, onClose, mentorId, mentorName }: 
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           {slots.map((slot, idx) => {
-                            const isSelected = selectedSlot?.startTime === slot.startTime;
+                            const slotData = slot as any;
+                            const isSelected = selectedSlot === slot;
+                            
+                            // Format time - handle both formats
+                            let timeDisplay = '';
+                            if (slotData.startTime && slotData.startTime.includes(':')) {
+                              // Backend format: "09:00"
+                              const [hours, minutes] = slotData.startTime.split(':');
+                              const hour = parseInt(hours);
+                              const ampm = hour >= 12 ? 'PM' : 'AM';
+                              const displayHour = hour % 12 || 12;
+                              timeDisplay = `${displayHour}:${minutes} ${ampm}`;
+                            } else {
+                              // ISO format fallback
+                              try {
+                                timeDisplay = format(parseISO(slot.startTime), 'h:mm a');
+                              } catch {
+                                timeDisplay = slotData.startTime;
+                              }
+                            }
+                            
                             return (
                               <Button
                                 key={idx}
@@ -197,7 +262,7 @@ export function BookAppointmentModal({ isOpen, onClose, mentorId, mentorName }: 
                               >
                                 {isSelected && <CheckCircle2 className="h-3 w-3 mr-1" />}
                                 <Clock className="h-3 w-3 mr-1" />
-                                {format(parseISO(slot.startTime), 'h:mm a')}
+                                {timeDisplay}
                               </Button>
                             );
                           })}
