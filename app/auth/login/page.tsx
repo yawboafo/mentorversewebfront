@@ -9,13 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { authApi } from '@/lib/api/auth';
 import { SocialLoginGroup, type SocialProvider } from '@/components/auth/social-login-buttons';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
-import { Mail, Lock, ArrowRight, Sparkles, Shield, Users } from 'lucide-react';
+import { Mail, Lock, ArrowRight, GraduationCap, Users, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +23,7 @@ export default function LoginPage() {
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -118,26 +118,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-purple-950/20 dark:via-pink-950/20 dark:to-orange-950/20 px-4 py-12">
-      {/* Animated Background Blobs */}
-      <motion.div 
-        className="absolute top-20 left-20 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/20 rounded-full blur-3xl"
-        animate={{ 
-          x: [0, 50, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.2, 1]
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div 
-        className="absolute bottom-20 right-20 w-96 h-96 bg-pink-400/20 dark:bg-pink-600/20 rounded-full blur-3xl"
-        animate={{ 
-          x: [0, -50, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 py-12">
+      {/* Subtle ambient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent dark:from-blue-950/20" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-100/40 via-transparent to-transparent dark:from-indigo-950/20" />
 
       <motion.div
         className="w-full max-w-md relative z-10"
@@ -145,42 +129,43 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Card className="border-0 shadow-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl">
-          <CardHeader className="space-y-4 pb-8">
+        <Card className="border border-slate-200/60 dark:border-slate-800/60 shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
+          <CardHeader className="space-y-3 pb-6 pt-8">
             <motion.div
-              initial={{ scale: 0, rotate: -10 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-              className="flex justify-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex flex-col items-center gap-3"
             >
-              <Badge className="px-5 py-2 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg">
-                <Sparkles className="w-4 h-4 mr-2 inline animate-pulse" />
-                Welcome back! ✨
-              </Badge>
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-8 w-8 text-blue-600" />
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">MentorVerse</h1>
+              </div>
             </motion.div>
             
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+              className="text-center"
             >
-              <CardTitle className="text-4xl font-black text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Sign in
+              <CardTitle className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                Welcome back
               </CardTitle>
-              <CardDescription className="text-center text-base font-medium mt-2">
-                Continue your journey with MentorVerse 🚀
+              <CardDescription className="text-base text-slate-600 dark:text-slate-400">
+                Continue your learning journey with real mentors
               </CardDescription>
             </motion.div>
           </CardHeader>
           
-          <CardContent className="space-y-6 pb-2">
+          <CardContent className="space-y-5 pb-3">
             {error && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
               >
-                <Alert variant="destructive" className="border-2">
-                  <AlertDescription className="font-medium">{error}</AlertDescription>
+                <Alert variant="destructive" className="border-l-4">
+                  <AlertDescription className="text-sm">{error}</AlertDescription>
                 </Alert>
               </motion.div>
             )}
@@ -190,8 +175,9 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="space-y-4"
+              className="space-y-3"
             >
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400 text-center">Or continue with</p>
               <SocialLoginGroup
                 onProviderClick={handleSocialLogin}
                 isLoading={isSocialLoading}
@@ -201,34 +187,31 @@ export default function LoginPage() {
 
             {/* Divider */}
             <motion.div
-              className="relative"
+              className="relative py-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
               <Separator />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
-                <span className="text-sm font-semibold text-muted-foreground">or continue with email</span>
-              </div>
             </motion.div>
           </CardContent>
 
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6 pb-2">
+            <CardContent className="space-y-5 pb-3">
               <motion.div 
                 className="space-y-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
               >
-                <Label htmlFor="email" className="text-base font-bold">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-11 h-12 text-base border-2 rounded-xl focus:ring-2 focus:ring-purple-500 transition-all"
+                    className="pl-10 h-11 text-sm"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
@@ -239,124 +222,103 @@ export default function LoginPage() {
               
               <motion.div 
                 className="space-y-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
               >
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-base font-bold">Password</Label>
+                  <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</Label>
                   <Link
                     href="/auth/forgot-password"
-                    className="text-sm font-semibold text-purple-600 hover:text-pink-600 transition-colors"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                   >
-                    Forgot? 🤔
+                    Forgot password?
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-11 h-12 text-base border-2 rounded-xl focus:ring-2 focus:ring-purple-500 transition-all"
+                    className="pl-10 pr-10 h-11 text-sm"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
                     disabled={isLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              </motion.div>
-
-              <motion.div
-                className="flex items-center gap-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl border border-purple-200 dark:border-purple-800"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Shield className="h-5 w-5 text-purple-600" />
-                <p className="text-sm font-medium text-foreground/80">
-                  Your data is secure and encrypted 🔒
-                </p>
               </motion.div>
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4 pt-6">
+            <CardFooter className="flex flex-col space-y-4 pt-4 pb-6">
               <motion.div
                 className="w-full"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                transition={{ delay: 0.7 }}
               >
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-lg font-black rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all group" 
+                  className="w-full h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
                       <motion.div
+                        className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="mr-2"
-                      >
-                        ⚡
-                      </motion.div>
-                      Signing in...
+                      />
+                      Logging in...
                     </>
                   ) : (
-                    <>
-                      Sign in 
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </>
+                    'Log in'
                   )}
                 </Button>
               </motion.div>
               
               <motion.div
-                className="space-y-3"
+                className="space-y-4 pt-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.8 }}
               >
-                <p className="text-center text-base font-medium text-foreground/70">
-                  New here?{' '}
-                  <Link href="/auth/register" className="font-black text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text hover:from-purple-700 hover:to-pink-700 transition-all">
-                    Create account →
+                <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+                  Don't have an account?{' '}
+                  <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                    Sign up
                   </Link>
                 </p>
 
                 <div className="relative">
                   <Separator />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 px-4">
-                    <span className="text-xs font-semibold text-muted-foreground">Are you a mentor?</span>
-                  </div>
                 </div>
 
-                <Link href="/mentor/join">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 gap-2 border-2 border-purple-200 hover:border-purple-500 hover:bg-purple-50 transition-all"
-                  >
-                    <Users className="h-5 w-5 text-purple-600" />
-                    <span className="font-bold">Join as a Mentor</span>
-                  </Button>
-                </Link>
+                <div className="space-y-2">
+                  <p className="text-center text-xs font-medium text-slate-500 dark:text-slate-500">Want to mentor others?</p>
+                  <Link href="/mentor/join">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-10 gap-2 text-sm font-medium border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                    >
+                      <Users className="h-4 w-4" />
+                      I'm a mentor
+                    </Button>
+                  </Link>
+                </div>
               </motion.div>
             </CardFooter>
           </form>
         </Card>
-
-        <motion.p
-          className="text-center mt-6 text-sm font-medium text-foreground/60"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          Join thousands leveling up their game 🎯
-        </motion.p>
       </motion.div>
     </div>
   );
