@@ -58,6 +58,8 @@ export function Navbar() {
 
   const isActiveRoute = (href: string) => {
     if (href === '/') return pathname === '/';
+    // Exact match for /dashboard to prevent matching /dashboard/mentors
+    if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   };
 

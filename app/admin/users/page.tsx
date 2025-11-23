@@ -75,6 +75,7 @@ export default function AdminUsersPage() {
     email: '',
     role: 'user' as 'user' | 'mentor' | 'admin',
     accountType: 'individual' as 'individual' | 'business',
+    mentorStatus: 'none' as 'none' | 'pending_approval' | 'active' | 'suspended',
   });
 
   useEffect(() => {
@@ -95,19 +96,29 @@ export default function AdminUsersPage() {
       console.log('✅ Users fetched:', response);
       
       // Transform snake_case to camelCase if needed
-      const transformedUsers = response.data.map((user: any) => ({
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name || user.fullName,
-        role: user.role,
-        accountType: user.account_type || user.accountType,
-        onboardingCompleted: user.onboarding_completed ?? user.onboardingCompleted,
-        createdAt: user.created_at || user.createdAt,
-        avatarUrl: user.avatar_url || user.avatarUrl,
-        country: user.country,
-        signupIntent: user.signup_intent || user.signupIntent,
-        mentorStatus: user.mentor_status || user.mentorStatus,
-      }));
+      const transformedUsers = response.data.map((user: any) => {
+        // Handle mentor_status: check for both snake_case and camelCase, treat null/undefined as 'none'
+        const rawMentorStatus = user.mentor_status ?? user.mentorStatus;
+        const mentorStatus = rawMentorStatus || 'none';
+        
+        console.log(`User ${user.email}: raw mentor_status=${user.mentor_status}, raw mentorStatus=${user.mentorStatus}, final=${mentorStatus}`);
+        
+        return {
+          id: user.id,
+          email: user.email,
+          fullName: user.full_name || user.fullName,
+          role: user.role,
+          accountType: user.account_type || user.accountType,
+          onboardingCompleted: user.onboarding_completed ?? user.onboardingCompleted,
+          createdAt: user.created_at || user.createdAt,
+          avatarUrl: user.avatar_url || user.avatarUrl,
+          country: user.country,
+          signupIntent: user.signup_intent || user.signupIntent,
+          mentorStatus: mentorStatus,
+        };
+      });
+      
+      console.log('📊 Transformed users with mentor status:', transformedUsers.map(u => ({ email: u.email, mentorStatus: u.mentorStatus })));
       
       setUsers(transformedUsers);
       setTotalUsers(response.total);
@@ -126,6 +137,7 @@ export default function AdminUsersPage() {
       email: user.email,
       role: user.role,
       accountType: user.accountType,
+      mentorStatus: user.mentorStatus || 'none',
     });
     setIsEditDialogOpen(true);
   };
@@ -133,13 +145,19 @@ export default function AdminUsersPage() {
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
+    // Validation: If trying to set mentor status to active/pending, ensure role is mentor
+    if (editForm.mentorStatus && editForm.mentorStatus !== 'none' && editForm.role !== 'mentor') {
+      toast.error('Please set the user role to "Mentor" before activating mentor status');
+      return;
+    }
+
     setProcessingId(selectedUser.id);
     try {
       console.log('📝 Updating user:', selectedUser.id, editForm);
       const updatedUser = await adminApi.updateUser(selectedUser.id, editForm);
       console.log('✅ User updated:', updatedUser);
       
-      // Transform response if needed
+      // Transform response (backend now returns mentor_status)
       const transformed: AdminUser = {
         id: updatedUser.id,
         email: updatedUser.email,
@@ -151,8 +169,10 @@ export default function AdminUsersPage() {
         avatarUrl: (updatedUser as any).avatar_url || updatedUser.avatarUrl,
         country: updatedUser.country,
         signupIntent: (updatedUser as any).signup_intent || (updatedUser as any).signupIntent,
-        mentorStatus: (updatedUser as any).mentor_status || (updatedUser as any).mentorStatus,
+        mentorStatus: (updatedUser as any).mentor_status || (updatedUser as any).mentorStatus || 'none',
       };
+      
+      console.log('✅ Transformed mentorStatus:', transformed.mentorStatus);
       
       toast.success('User updated successfully');
       setUsers(prev => prev.map(u => u.id === selectedUser.id ? transformed : u));
@@ -160,7 +180,9 @@ export default function AdminUsersPage() {
       setSelectedUser(null);
     } catch (err: any) {
       console.error('❌ Update user error:', err);
-      toast.error(err.message || 'Failed to update user');
+      console.error('❌ Full error details:', JSON.stringify(err, null, 2));
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || err.message || 'Failed to update user';
+      toast.error(errorMessage);
     } finally {
       setProcessingId(null);
     }
@@ -215,7 +237,9 @@ export default function AdminUsersPage() {
   };
 
   const getMentorStatusBadge = (status?: string) => {
-    if (!status || status === 'none') return <Badge variant="outline" className="text-gray-400">—</Badge>;
+    if (!status || status === 'none') {
+      return <Badge variant="outline" className="text-gray-500">None</Badge>;
+    }
     const variants: Record<string, { color: string; label: string }> = {
       pending_approval: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: '⏳ Pending' },
       active: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: '✅ Active' },
@@ -489,6 +513,32 @@ export default function AdminUsersPage() {
                   <SelectItem value="business">Business</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-mentor-status">Mentor Status</Label>
+              <Select
+                value={editForm.mentorStatus}
+                onValueChange={(value: 'none' | 'pending_approval' | 'active' | 'suspended') => 
+                  setEditForm({ ...editForm, mentorStatus: value })
+                }
+              >
+                <SelectTrigger id="edit-mentor-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {editForm.role !== 'mentor' && editForm.mentorStatus !== 'none' ? (
+                  <span className="text-amber-600 dark:text-amber-400">⚠️ Note: Set Role to "Mentor" first, then update status</span>
+                ) : (
+                  'Configure mentor status independently of user role'
+                )}
+              </p>
             </div>
           </div>
           <DialogFooter>

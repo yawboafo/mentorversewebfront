@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { contentApi } from '@/lib/api/content';
+import { useContentModules } from '@/hooks/use-content-modules';
+import type { ResourceType } from '@/lib/api/types';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -25,7 +27,17 @@ import {
   Users,
   Globe,
   Target,
-  Sparkles
+  Sparkles,
+  GripVertical,
+  Upload,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  File,
+  Music,
+  Trash2,
+  Edit,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -61,6 +73,7 @@ export default function CreateContentPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [createdContentId, setCreatedContentId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -83,9 +96,45 @@ export default function CreateContentPage() {
     tags: [] as string[]
   });
 
+  // Module management
+  const {
+    modules,
+    loading: modulesLoading,
+    uploadProgress,
+    fetchStructure,
+    createModule: createModuleApi,
+    updateModule: updateModuleApi,
+    deleteModule: deleteModuleApi,
+    addResource,
+    deleteResource: deleteResourceApi,
+  } = useContentModules({ contentId: createdContentId || '' });
+
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [editingModule, setEditingModule] = useState<string | null>(null);
+  const [newModuleTitle, setNewModuleTitle] = useState('');
+  const [newModuleDescription, setNewModuleDescription] = useState('');
+  const [editModuleTitle, setEditModuleTitle] = useState('');
+  const [editModuleDescription, setEditModuleDescription] = useState('');
+  
+  // Resource management
+  const [showAddResource, setShowAddResource] = useState<string | null>(null);
+  const [resourceType, setResourceType] = useState<ResourceType>('video');
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceFile, setResourceFile] = useState<File | null>(null);
+  const [isFree, setIsFree] = useState(false);
+
   const [newOutcome, setNewOutcome] = useState('');
   const [newTool, setNewTool] = useState('');
   const [newTag, setNewTag] = useState('');
+
+  // Fetch modules when content is created and we move to step 4
+  useEffect(() => {
+    if (createdContentId && currentStep === 4) {
+      fetchStructure();
+    }
+  }, [createdContentId, currentStep, fetchStructure]);
 
   const addLearningOutcome = () => {
     if (newOutcome.trim()) {
@@ -147,6 +196,138 @@ export default function CreateContentPage() {
     }));
   };
 
+  const toggleModuleExpanded = (moduleId: string) => {
+    setExpandedModules(prev => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
+
+  const handleCreateModule = async () => {
+    if (!createdContentId) {
+      toast.error('Please save content first');
+      return;
+    }
+    if (!newModuleTitle.trim()) {
+      toast.error('Module title is required');
+      return;
+    }
+
+    try {
+      const moduleData: any = {
+        title: newModuleTitle,
+      };
+      if (newModuleDescription) {
+        moduleData.description = newModuleDescription;
+      }
+      await createModuleApi(moduleData);
+      setNewModuleTitle('');
+      setNewModuleDescription('');
+      toast.success('Module created!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create module');
+    }
+  };
+
+  const handleUpdateModule = async (moduleId: string) => {
+    if (!editModuleTitle.trim()) {
+      toast.error('Module title is required');
+      return;
+    }
+
+    try {
+      const updateData: any = {
+        title: editModuleTitle,
+      };
+      if (editModuleDescription) {
+        updateData.description = editModuleDescription;
+      }
+      await updateModuleApi(moduleId, updateData);
+      setEditingModule(null);
+      setEditModuleTitle('');
+      setEditModuleDescription('');
+      toast.success('Module updated!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update module');
+    }
+  };
+
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!confirm('Delete this module and all its resources?')) return;
+
+    try {
+      await deleteModuleApi(moduleId);
+      toast.success('Module deleted');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete module');
+    }
+  };
+
+  const handleAddResource = async (moduleId: string) => {
+    if (!resourceTitle.trim()) {
+      toast.error('Resource title is required');
+      return;
+    }
+
+    if (resourceType === 'link' && !resourceUrl.trim()) {
+      toast.error('URL is required for link resources');
+      return;
+    }
+
+    if (resourceType !== 'link' && !resourceFile) {
+      toast.error('Please select a file');
+      return;
+    }
+
+    try {
+      const resourceData: any = {
+        title: resourceTitle,
+        resource_type: resourceType,
+        is_free: isFree,
+      };
+
+      if (resourceDescription) {
+        resourceData.description = resourceDescription;
+      }
+
+      if (resourceType === 'link') {
+        resourceData.url = resourceUrl;
+      } else if (resourceFile) {
+        resourceData.file = resourceFile;
+      }
+
+      await addResource(moduleId, resourceData);
+      
+      // Reset form
+      setShowAddResource(null);
+      setResourceTitle('');
+      setResourceDescription('');
+      setResourceUrl('');
+      setResourceFile(null);
+      setIsFree(false);
+      
+      toast.success('Resource added!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add resource');
+    }
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
+    if (!confirm('Delete this resource?')) return;
+
+    try {
+      await deleteResourceApi(resourceId);
+      toast.success('Resource deleted');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete resource');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -177,7 +358,7 @@ export default function CreateContentPage() {
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
       toast.error('Please provide a valid price');
-      setCurrentStep(3);
+      setCurrentStep(4);
       return;
     }
 
@@ -206,17 +387,40 @@ export default function CreateContentPage() {
         status: 'draft' as const
       };
 
-      await contentApi.createContent(contentData);
-      toast.success('Content created successfully! 🎉');
-      
-      setTimeout(() => {
-        router.push('/mentor/dashboard');
-      }, 1500);
+      const response = await contentApi.createContent(contentData);
+      setCreatedContentId(response.id);
+      toast.success('Content saved as draft! Now add modules and resources.');
+      setCurrentStep(3); // Move to module management step
     } catch (err: any) {
       console.error('❌ Create content error:', err);
       toast.error(err.message || 'Failed to create content');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!createdContentId) return;
+
+    if (modules.length === 0) {
+      toast.error('Please add at least one module before publishing');
+      return;
+    }
+
+    const hasResources = modules.some(m => m.resources && m.resources.length > 0);
+    if (!hasResources) {
+      toast.error('Please add resources to your modules before publishing');
+      return;
+    }
+
+    try {
+      await contentApi.updateContent(createdContentId, { status: 'published' });
+      toast.success('Content published! 🎉');
+      setTimeout(() => {
+        router.push('/mentor/dashboard');
+      }, 1500);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to publish content');
     }
   };
 
@@ -231,8 +435,32 @@ export default function CreateContentPage() {
   const steps = [
     { number: 1, title: 'Basic Info' },
     { number: 2, title: 'Content Details' },
-    { number: 3, title: 'Pricing & Tags' }
+    { number: 3, title: 'Modules & Resources' },
+    { number: 4, title: 'Pricing & Tags' }
   ];
+
+  const getResourceIcon = (type: ResourceType) => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4" />;
+      case 'audio':
+        return <Music className="h-4 w-4" />;
+      case 'image':
+        return <ImageIcon className="h-4 w-4" />;
+      case 'document':
+        return <FileText className="h-4 w-4" />;
+      case 'file':
+        return <File className="h-4 w-4" />;
+      case 'link':
+        return <LinkIcon className="h-4 w-4" />;
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    const mb = bytes / (1024 * 1024);
+    return mb < 1 ? `${(bytes / 1024).toFixed(1)} KB` : `${mb.toFixed(1)} MB`;
+  };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -526,12 +754,381 @@ export default function CreateContentPage() {
               </>
             )}
 
-            {/* Step 3: Pricing & Tags */}
+            {/* Step 3: Modules & Resources */}
             {currentStep === 3 && (
+              <>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">Content Structure</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Organize your content into modules and add resources
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Add New Module */}
+                  <Card className="border-dashed">
+                    <CardContent className="pt-6">
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="newModuleTitle">Module Title</Label>
+                          <Input
+                            id="newModuleTitle"
+                            value={newModuleTitle}
+                            onChange={(e) => setNewModuleTitle(e.target.value)}
+                            placeholder="e.g., Introduction to Web Development"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="newModuleDescription">Module Description</Label>
+                          <Textarea
+                            id="newModuleDescription"
+                            value={newModuleDescription}
+                            onChange={(e) => setNewModuleDescription(e.target.value)}
+                            placeholder="Describe what this module covers"
+                            rows={2}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleCreateModule}
+                          className="w-full"
+                          variant="outline"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Module
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Modules List */}
+                  {modulesLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : modules.length === 0 ? (
+                    <Card className="bg-muted/30">
+                      <CardContent className="py-8 text-center">
+                        <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-muted-foreground">
+                          No modules yet. Add your first module above.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {modules.map((module, index) => (
+                        <Card key={module.id}>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3 flex-1">
+                                <div className="mt-1">
+                                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                                </div>
+                                <div className="flex-1">
+                                  {editingModule === module.id ? (
+                                    <div className="space-y-2">
+                                      <Input
+                                        value={editModuleTitle}
+                                        onChange={(e) => setEditModuleTitle(e.target.value)}
+                                        placeholder="Module title"
+                                      />
+                                      <Textarea
+                                        value={editModuleDescription}
+                                        onChange={(e) => setEditModuleDescription(e.target.value)}
+                                        placeholder="Module description"
+                                        rows={2}
+                                      />
+                                      <div className="flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleUpdateModule(module.id)}
+                                        >
+                                          Save
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            setEditingModule(null);
+                                            setEditModuleTitle('');
+                                            setEditModuleDescription('');
+                                          }}
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="p-0 h-auto"
+                                          onClick={() => toggleModuleExpanded(module.id)}
+                                        >
+                                          {expandedModules.has(module.id) ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                        <CardTitle className="text-base">
+                                          {index + 1}. {module.title}
+                                        </CardTitle>
+                                        <Badge variant="secondary" className="ml-2">
+                                          {module.resources?.length || 0} resources
+                                        </Badge>
+                                      </div>
+                                      {module.description && (
+                                        <CardDescription className="mt-1 ml-6">
+                                          {module.description}
+                                        </CardDescription>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              {editingModule !== module.id && (
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingModule(module.id);
+                                      setEditModuleTitle(module.title);
+                                      setEditModuleDescription(module.description || '');
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteModule(module.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </CardHeader>
+
+                          {expandedModules.has(module.id) && (
+                            <CardContent className="pt-0">
+                              {/* Add Resource Form */}
+                              {showAddResource === module.id ? (
+                                <Card className="border-dashed mb-3">
+                                  <CardContent className="pt-4 space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <Label>Resource Type</Label>
+                                        <Select
+                                          value={resourceType}
+                                          onValueChange={(value: ResourceType) => setResourceType(value)}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="video">Video</SelectItem>
+                                            <SelectItem value="audio">Audio</SelectItem>
+                                            <SelectItem value="image">Image</SelectItem>
+                                            <SelectItem value="document">Document (PDF)</SelectItem>
+                                            <SelectItem value="file">File</SelectItem>
+                                            <SelectItem value="link">External Link</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="flex items-end">
+                                        <div className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`free-${module.id}`}
+                                            checked={isFree}
+                                            onCheckedChange={(checked) => setIsFree(checked as boolean)}
+                                          />
+                                          <label
+                                            htmlFor={`free-${module.id}`}
+                                            className="text-sm font-medium cursor-pointer"
+                                          >
+                                            Free Preview
+                                          </label>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label>Title</Label>
+                                      <Input
+                                        value={resourceTitle}
+                                        onChange={(e) => setResourceTitle(e.target.value)}
+                                        placeholder="Resource title"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label>Description (optional)</Label>
+                                      <Textarea
+                                        value={resourceDescription}
+                                        onChange={(e) => setResourceDescription(e.target.value)}
+                                        placeholder="Resource description"
+                                        rows={2}
+                                      />
+                                    </div>
+                                    {resourceType === 'link' ? (
+                                      <div>
+                                        <Label>URL</Label>
+                                        <Input
+                                          value={resourceUrl}
+                                          onChange={(e) => setResourceUrl(e.target.value)}
+                                          placeholder="https://example.com"
+                                          type="url"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <Label>File</Label>
+                                        <Input
+                                          type="file"
+                                          onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
+                                          accept={
+                                            resourceType === 'video'
+                                              ? 'video/*'
+                                              : resourceType === 'audio'
+                                              ? 'audio/*'
+                                              : resourceType === 'image'
+                                              ? 'image/*'
+                                              : resourceType === 'document'
+                                              ? '.pdf'
+                                              : '*'
+                                          }
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAddResource(module.id)}
+                                        disabled={modulesLoading}
+                                      >
+                                        {modulesLoading ? (
+                                          <>
+                                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                            Uploading...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Upload className="h-3 w-3 mr-2" />
+                                            Add Resource
+                                          </>
+                                        )}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setShowAddResource(null);
+                                          setResourceTitle('');
+                                          setResourceDescription('');
+                                          setResourceUrl('');
+                                          setResourceFile(null);
+                                          setIsFree(false);
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full mb-3"
+                                  onClick={() => setShowAddResource(module.id)}
+                                >
+                                  <Plus className="h-3 w-3 mr-2" />
+                                  Add Resource
+                                </Button>
+                              )}
+
+                              {/* Resources List */}
+                              {module.resources && module.resources.length > 0 ? (
+                                <div className="space-y-2">
+                                  {module.resources.map((resource) => (
+                                    <div
+                                      key={resource.id}
+                                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                                    >
+                                      <div className="flex items-center gap-3 flex-1">
+                                        <div className="text-muted-foreground">
+                                          {getResourceIcon(resource.resourceType)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <p className="font-medium text-sm truncate">
+                                              {resource.title}
+                                            </p>
+                                            {resource.isPreview && (
+                                              <Badge variant="secondary" className="text-xs">
+                                                Free
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {resource.description && (
+                                            <p className="text-xs text-muted-foreground truncate">
+                                              {resource.description}
+                                            </p>
+                                          )}
+                                          <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                                            <span className="capitalize">{resource.resourceType}</span>
+                                            {resource.fileSize && (
+                                              <>
+                                                <span>•</span>
+                                                <span>{formatFileSize(resource.fileSize)}</span>
+                                              </>
+                                            )}
+                                            {resource.duration && (
+                                              <>
+                                                <span>•</span>
+                                                <span>{Math.round(resource.duration / 60)} min</span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteResource(resource.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                  No resources yet
+                                </p>
+                              )}
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Step 4: Pricing & Tags */}
+            {currentStep === 4 && (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (USD) *</Label>
+                    <Label htmlFor="price">Price *</Label>
                     <Input
                       id="price"
                       type="number"
@@ -542,6 +1139,9 @@ export default function CreateContentPage() {
                       placeholder="99.00"
                       required
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Currency will be based on your profile location
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -617,23 +1217,57 @@ export default function CreateContentPage() {
             Previous
           </Button>
           
-          {currentStep < 3 ? (
+          {currentStep === 1 || currentStep === 2 ? (
             <Button
               type="button"
-              onClick={() => setCurrentStep(currentStep + 1)}
+              onClick={() => {
+                if (currentStep === 2) {
+                  // Validate before moving to step 3
+                  if (!formData.title.trim()) {
+                    toast.error('Please provide a title');
+                    setCurrentStep(1);
+                    return;
+                  }
+                  if (!formData.description.trim()) {
+                    toast.error('Please provide a description');
+                    setCurrentStep(1);
+                    return;
+                  }
+                  if (formData.learningOutcomes.length === 0) {
+                    toast.error('Please add at least one learning outcome');
+                    return;
+                  }
+                  if (formData.deliveryModes.length === 0) {
+                    toast.error('Please select at least one delivery mode');
+                    return;
+                  }
+                  // Save as draft before moving to modules
+                  handleSubmit(new Event('submit') as any);
+                  return;
+                }
+                setCurrentStep(currentStep + 1);
+              }}
+              disabled={isLoading}
             >
-              Next
-            </Button>
-          ) : (
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+              {currentStep === 2 && isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  Saving...
                 </>
               ) : (
-                'Create Content'
+                'Next'
               )}
+            </Button>
+          ) : currentStep === 3 ? (
+            <Button
+              type="button"
+              onClick={() => setCurrentStep(4)}
+            >
+              Continue to Pricing
+            </Button>
+          ) : (
+            <Button type="button" onClick={handlePublish}>
+              Publish Content
             </Button>
           )}
         </div>

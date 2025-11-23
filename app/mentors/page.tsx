@@ -27,16 +27,19 @@ export default function MentorsPage() {
     fetchMentors();
   }, [currentPage]);
 
-  const fetchMentors = async (query?: MentorsQuery) => {
+  const fetchMentors = async (query?: string) => {
     try {
       setIsLoading(true);
-      const finalQuery: MentorsQuery = {
-        ...query,
-        page: query?.page || currentPage,
-        limit: ITEMS_PER_PAGE
+      const params: MentorsQuery = {
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
       };
       
-      const response = await mentorsApi.getMentors(finalQuery);
+      if (query?.trim()) {
+        params.q = query.trim();
+      }
+      
+      const response = await mentorsApi.getMentors(params);
       setMentors(response.data || []);
       setTotalItems(response.total || 0);
       setTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
@@ -52,7 +55,7 @@ export default function MentorsPage() {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchMentors({ q: searchQuery, page: 1 });
+    fetchMentors(searchQuery);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -243,9 +246,31 @@ export default function MentorsPage() {
       )}
 
       {/* Results info */}
-      {!isLoading && mentors.length > 0 && (
+      {!isLoading && totalItems > 0 && (
         <div className="mt-6 text-center text-sm text-muted-foreground">
           Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} mentors
+        </div>
+      )}
+      
+      {/* Empty state */}
+      {!isLoading && mentors.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Users className="h-16 w-16 text-muted-foreground/50 mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No mentors found</h3>
+          <p className="text-muted-foreground mb-6">
+            {searchQuery 
+              ? "Try adjusting your search query or browse all mentors" 
+              : "Start by browsing available mentors or searching for specific expertise"}
+          </p>
+          {searchQuery && (
+            <Button onClick={() => { 
+              setSearchQuery(''); 
+              setCurrentPage(1);
+              fetchMentors();
+            }}>
+              Clear Search
+            </Button>
+          )}
         </div>
       )}
     </div>

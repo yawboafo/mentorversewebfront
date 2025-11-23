@@ -62,16 +62,21 @@ export function DraftStep({ selectedIdea, onDraftGenerated, onBack }: DraftStepP
       return;
     }
 
+    if (!problemItSolves.trim()) {
+      toast.error('Please provide the problem this content solves');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const draft = await aiApi.generateContentDraft({
-        title: title.trim(),
-        target_audience: targetAudience.trim() || undefined,
-        problem_it_solves: problemItSolves.trim() || undefined,
-        outline: outline.trim() || undefined,
+        working_title: title.trim(),
         delivery_modes: deliveryModes,
         level,
         content_type: contentType,
+        problem_it_solves: problemItSolves.trim(),
+        target_audience: targetAudience.trim() || undefined,
+        rough_outline: outline.trim() || undefined,
       });
 
       onDraftGenerated(draft);

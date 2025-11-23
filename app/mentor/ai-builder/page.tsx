@@ -50,27 +50,27 @@ export default function AIBuilderPage() {
 
     setIsSaving(true);
     try {
-      // Map ContentDraft to Content creation payload
+      // Map ContentDraft to Content creation payload (backend expects snake_case)
       const contentPayload = {
         title: draft.title,
         description: draft.description,
-        contentType: draft.content_type,
-        targetAudience: draft.target_audience,
-        problemItSolves: draft.problem_it_solves,
-        learningOutcomes: draft.learning_outcomes,
-        deliveryModes: draft.delivery_modes,
-        estimatedDuration: draft.estimated_duration,
+        content_type: draft.content_type,
+        target_audience: draft.target_audience,
+        problem_it_solves: draft.problem_it_solves,
+        learning_outcomes: draft.learning_outcomes,
+        delivery_modes: draft.delivery_modes,
+        estimated_duration: draft.estimated_duration,
         level: draft.level,
         prerequisites: draft.prerequisites || null,
-        supportModel: draft.support_model || null,
+        support_model: draft.support_model || null,
         outline: draft.outline,
         tags: draft.tags || [],
         price: draft.price || 0,
-        currency: 'USD',
+        // Don't set currency - let backend determine from mentor's profile
         status: 'draft' as const,
         format: 'mixed' as const,
         tools: [],
-        aiContext: `Generated via AI Builder with idea: ${selectedIdea?.title || 'Custom'}`,
+        ai_context: `Generated via AI Builder with idea: ${selectedIdea?.title || 'Custom'}`,
       };
 
       const savedContent = await contentApi.createContent(contentPayload);

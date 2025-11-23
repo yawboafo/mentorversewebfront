@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { AiSession, AiMessage, CreateSessionRequest, SendMessageRequest, CourseIdea, ContentDraft } from './types';
+import type { AiSession, AiMessage, CreateSessionRequest, SendMessageRequest, CourseIdea, ContentDraft, GenerateIdeasRequest, GenerateDraftRequest, RefineDraftRequest } from './types';
 
 export const aiApi = {
   async getSessions(): Promise<AiSession[]> {
@@ -28,32 +28,15 @@ export const aiApi = {
   },
 
   // AI Content Builder endpoints
-  async generateContentIdeas(data: {
-    prompt: string;
-    target_audience?: string;
-    focus_areas?: string[];
-  }): Promise<{ ideas: CourseIdea[] }> {
+  async generateContentIdeas(data: GenerateIdeasRequest): Promise<{ ideas: CourseIdea[] }> {
     return apiClient.post('/ai/content/ideas', data);
   },
 
-  async generateContentDraft(data: {
-    title: string;
-    target_audience?: string;
-    problem_it_solves?: string;
-    outline?: string;
-    delivery_modes?: string[];
-    level?: string;
-    content_type?: string;
-  }): Promise<ContentDraft> {
+  async generateContentDraft(data: GenerateDraftRequest): Promise<ContentDraft> {
     return apiClient.post('/ai/content/draft', data);
   },
 
-  async refineContent(data: {
-    content_id?: string;
-    draft?: any;
-    instructions: string;
-    focus_fields?: string[];
-  }): Promise<ContentDraft> {
+  async refineContent(data: RefineDraftRequest): Promise<ContentDraft> {
     return apiClient.post('/ai/content/refine', data);
   },
 };

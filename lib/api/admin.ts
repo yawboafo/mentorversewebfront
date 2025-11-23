@@ -18,6 +18,7 @@ interface UpdateUserRequest {
   email?: string;
   role?: 'user' | 'mentor' | 'admin';
   accountType?: 'individual' | 'business';
+  mentorStatus?: 'none' | 'pending_approval' | 'active' | 'suspended';
 }
 
 export const adminApi = {
@@ -86,7 +87,16 @@ export const adminApi = {
   },
 
   async updateUser(userId: string, data: UpdateUserRequest): Promise<AdminUser> {
-    return apiClient.patch<AdminUser>(`/admin/users/${userId}`, data);
+    // Transform camelCase to snake_case for backend
+    const payload: any = {};
+    if (data.fullName !== undefined) payload.full_name = data.fullName;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.role !== undefined) payload.role = data.role;
+    if (data.accountType !== undefined) payload.account_type = data.accountType;
+    if (data.mentorStatus !== undefined) payload.mentor_status = data.mentorStatus;
+    
+    console.log('🔄 Transformed payload for backend:', payload);
+    return apiClient.patch<AdminUser>(`/admin/users/${userId}`, payload);
   },
 
   async deleteUser(userId: string): Promise<void> {

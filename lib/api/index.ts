@@ -6,6 +6,7 @@ export * from './onboarding';
 export * from './dashboard';
 export * from './mentors';
 export * from './content';
+export * from './modules';
 export * from './ai';
 export * from './admin';
 export * from './timeline';

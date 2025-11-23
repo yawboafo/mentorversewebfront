@@ -6,14 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
+import { appointmentsApi } from '@/lib/api/appointments';
+import type { Appointment } from '@/lib/api/appointments';
 import { MentorDashboard } from '@/lib/api/types';
-import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles } from 'lucide-react';
+import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { formatCurrency } from '@/lib/utils/currency';
 
 export default function MentorDashboardPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
   const [dashboardData, setDashboardData] = useState<MentorDashboard | null>(null);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -29,8 +35,18 @@ export default function MentorDashboardPage() {
       }
     };
 
+    const fetchAppointments = async () => {
+      try {
+        const appointments = await appointmentsApi.getUpcomingAppointments(3);
+        setUpcomingAppointments(appointments);
+      } catch (err: any) {
+        console.error('Failed to fetch appointments:', err);
+      }
+    };
+
     if (user) {
       fetchDashboard();
+      fetchAppointments();
     }
   }, [user]);
 
@@ -143,7 +159,114 @@ export default function MentorDashboardPage() {
             <p className="text-xs text-muted-foreground mt-1">Courses & frameworks</p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">This week</p>
+            <Button asChild size="sm" variant="link" className="px-0 mt-2">
+              <Link href="/mentor/appointments">
+                View all <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <Button variant="outline" asChild className="h-auto py-4">
+          <Link href="/mentor/availability">
+            <Calendar className="h-5 w-5 mr-2" />
+            Manage Availability
+          </Link>
+        </Button>
+        <Button variant="outline" asChild className="h-auto py-4">
+          <Link href="/mentor/appointments">
+            <Clock className="h-5 w-5 mr-2" />
+            View All Appointments
+          </Link>
+        </Button>
+      </div>
+
+      {/* Upcoming Appointments */}
+      {upcomingAppointments.length > 0 && (
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Upcoming Sessions</h2>
+            <Button variant="ghost" asChild>
+              <Link href="/mentor/appointments">
+                View all <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="grid gap-4">
+            {upcomingAppointments.map((appointment) => {
+              const mentee = appointment.mentee;
+              const startTime = parseISO(appointment.startTime);
+              const endTime = parseISO(appointment.endTime);
+              
+              return (
+                <Card key={appointment.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={mentee.profilePhoto} alt={mentee.fullName} />
+                          <AvatarFallback>
+                            {mentee.fullName.split(' ').map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">{mentee.fullName}</h3>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(startTime, 'MMM d, yyyy')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                            </span>
+                          </div>
+                          {appointment.notes && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {appointment.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {appointment.status === 'scheduled' && (
+                          <Button size="sm" variant="outline" onClick={() => {
+                            appointmentsApi.confirmAppointment(appointment.id)
+                              .then(() => window.location.reload())
+                              .catch(console.error);
+                          }}>
+                            Confirm
+                          </Button>
+                        )}
+                        {appointment.meetingLink && (
+                          <Button asChild size="sm">
+                            <a href={appointment.meetingLink} target="__blank" rel="noopener noreferrer">
+                              <Video className="h-4 w-4 mr-2" />
+                              Join
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* AI Builder CTA - Show if no content */}
       {(!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
@@ -191,7 +314,7 @@ export default function MentorDashboardPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dashboardData.top_content.map((item) => (
+            {dashboardData.top_content.map((item: any) => (
               <Card key={item.content.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -235,7 +358,7 @@ export default function MentorDashboardPage() {
           <Card>
             <CardContent className="p-0">
               <div className="divide-y">
-                {dashboardData.recent_purchases.map((purchase) => (
+                {dashboardData.recent_purchases.map((purchase: any) => (
                   <div key={purchase.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       <p className="font-medium">{purchase.content_title || 'Unknown Content'}</p>
@@ -248,8 +371,9 @@ export default function MentorDashboardPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">${purchase.amount || 0}</p>
-                      <p className="text-xs text-muted-foreground">{purchase.currency || 'USD'}</p>
+                      <p className="font-semibold">
+                        {formatCurrency(purchase.amount || 0, purchase.currency || 'USD')}
+                      </p>
                     </div>
                   </div>
                 ))}

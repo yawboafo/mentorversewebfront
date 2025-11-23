@@ -344,10 +344,23 @@ export default function ContentDetailPage() {
               {/* Price */}
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-1">Price</p>
-                <p className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                  ${content.price}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">{content.currency || 'USD'}</p>
+                <div className="flex justify-center">
+                  <p className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                    {new Intl.NumberFormat('en-US', { 
+                      style: 'currency', 
+                      currency: content.display_currency || content.currency || 'USD' 
+                    }).format(content.display_price || content.price)}
+                  </p>
+                </div>
+                {/* Show original price if converted */}
+                {content.base_currency && content.base_currency !== (content.display_currency || content.currency) && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Original: {new Intl.NumberFormat('en-US', { 
+                      style: 'currency', 
+                      currency: content.base_currency 
+                    }).format(content.base_price || content.price)}
+                  </p>
+                )}
               </div>
 
               <Separator />

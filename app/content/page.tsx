@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { contentApi, ContentQuery } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
 import { Search, BookOpen, Play, Clock, Award, TrendingUp, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils/currency';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -141,7 +142,10 @@ export default function ContentPage() {
                   
                   {/* Price Badge */}
                   <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full font-bold">
-                    ${item.price}
+                    {formatCurrency(
+                      item.display_price || item.price,
+                      item.display_currency || item.currency || 'USD'
+                    )}
                   </div>
                   
                   {/* Type Badge */}

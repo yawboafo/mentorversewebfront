@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
 import { Mentor, Content } from '@/lib/api/types';
+import { formatCurrency } from '@/lib/utils/currency';
 
 export default function HomePage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -22,6 +23,9 @@ export default function HomePage() {
   const [coursesTotalPages, setCoursesTotalPages] = useState(1);
   const [isLoadingMentors, setIsLoadingMentors] = useState(true);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
+  
+  const videoRef = useRef<HTMLDivElement>(null);
 
   const ITEMS_PER_PAGE = 6;
 
@@ -32,6 +36,32 @@ export default function HomePage() {
   useEffect(() => {
     fetchCourses();
   }, [coursesPage]);
+
+  // Intersection Observer for video autoplay
+  useEffect(() => {
+    const currentRef = videoRef.current;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVideoVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 } // Trigger when 30% of video is visible
+    );
+
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
 
   const fetchMentors = async () => {
     try {
@@ -544,7 +574,10 @@ export default function HomePage() {
                         <div className="flex items-center justify-between text-sm">
                           {course.price ? (
                             <span className="font-bold text-lg text-blue-600">
-                              ${course.price}
+                              {formatCurrency(
+                                course.display_price || course.price, 
+                                course.display_currency || course.currency || 'USD'
+                              )}
                             </span>
                           ) : (
                             <span className="font-bold text-lg text-green-600">
@@ -1148,6 +1181,110 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* YouTube Video Section - Watch & Learn */}
+      <section 
+        ref={videoRef}
+        className="py-24 bg-gradient-to-b from-emerald-50/30 dark:from-emerald-950/10 to-background"
+      >
+        <div className="w-full px-0">
+          <motion.div 
+            className="text-center mb-16 px-4 sm:px-6 lg:px-8"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -10 }}
+              whileInView={{ scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            >
+              <Badge className="mb-6 px-5 py-2 text-base font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg">
+                <Play className="w-4 h-4 mr-2 inline" />
+                Watch & Learn
+              </Badge>
+            </motion.div>
+            <motion.h2 
+              className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
+              See How It <motion.span 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              >Works</motion.span>
+            </motion.h2>
+            <motion.p 
+              className="text-xl text-foreground/70 max-w-2xl mx-auto font-medium"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+            >
+              Get a sneak peek into the MentorVerse experience 🎥
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ 
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+              delay: 0.2
+            }}
+            className="relative w-full aspect-video bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30"
+          >
+            <iframe
+              key={isVideoVisible ? 'playing' : 'paused'}
+              className="absolute inset-0 w-full h-full"
+              src={`https://www.youtube.com/embed/Uz5BRjmbJ8E?autoplay=${isVideoVisible ? '1' : '0'}&mute=1&rel=0&modestbranding=1&playsinline=1`}
+              title="MentorVerse Introduction"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+            {!isVideoVisible && (
+              <motion.div 
+                className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-900 dark:to-pink-900 pointer-events-none"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: isVideoVisible ? 0 : 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Play className="w-24 h-24 text-white/80" strokeWidth={1.5} />
+                </motion.div>
+              </motion.div>
+            )}
+          </motion.div>
+
+          <motion.p
+            className="text-center text-sm text-foreground/60 mt-6 font-medium"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.8 }}
+          >
+            💡 Video will play automatically when you scroll here
+          </motion.p>
         </div>
       </section>
 

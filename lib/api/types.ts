@@ -250,6 +250,13 @@ export interface Content {
   supportModel: string | null;
   price: number;
   currency: string;
+  // Currency conversion fields (when backend implements conversion)
+  base_price?: number;
+  base_currency?: string;
+  display_price?: number;
+  display_currency?: string;
+  conversion_rate?: number;
+  conversion_date?: string;
   thumbnailUrl: string | null;
   mediaUrl: string | null;
   mediaType: string;
@@ -286,6 +293,7 @@ export interface ContentFull extends Content {
   outline: Module[];
 }
 
+// Legacy module type (kept for backward compatibility)
 export interface Module {
   title: string;
   description: string;
@@ -302,6 +310,55 @@ export interface Resource {
   title: string;
   url: string;
   type: string;
+}
+
+// New enhanced types (imported from modules.ts for full functionality)
+export type ResourceType = 'video' | 'image' | 'document' | 'link' | 'audio' | 'file';
+
+export interface ContentModule {
+  id: string;
+  contentId: string;
+  title: string;
+  description: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentResource {
+  id: string;
+  moduleId: string;
+  title: string;
+  description?: string;
+  resourceType: ResourceType;
+  url: string;
+  metadata?: {
+    cloudinaryPublicId?: string;
+    thumbnailUrl?: string;
+    width?: number;
+    height?: number;
+    format?: string;
+    [key: string]: any;
+  };
+  order: number;
+  duration?: number; // For video/audio in seconds
+  fileSize?: number; // In bytes
+  mimeType?: string;
+  isPreview: boolean; // For free preview content
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ModuleWithResources extends ContentModule {
+  resources: ContentResource[];
+}
+
+export interface ContentWithStructure {
+  id: string;
+  title: string;
+  description: string;
+  contentType: 'course' | 'framework';
+  modules: ModuleWithResources[];
 }
 
 export interface ContentPerformance {
@@ -380,6 +437,33 @@ export interface CourseIdea {
   estimated_duration?: string;
   level?: string;
   key_topics?: string[];
+}
+
+// AI Content Generation Request Types (v2.6.0)
+export interface GenerateIdeasRequest {
+  prompt: string;
+  target_audience?: string;
+  focus_areas?: string[];
+}
+
+export interface GenerateDraftRequest {
+  working_title: string;
+  delivery_modes: string[];
+  level: string;
+  content_type: string;
+  problem_it_solves: string;
+  target_audience?: string;
+  rough_outline?: string;
+  estimated_duration?: string;
+  additional_context?: string;
+  auto_save?: boolean;
+}
+
+export interface RefineDraftRequest {
+  instructions: string;
+  content_id?: string;
+  draft?: ContentDraft;
+  fields_to_focus?: string[];
 }
 
 export interface ContentDraft {
@@ -476,5 +560,94 @@ export interface MentorApplicationAdmin extends Omit<Mentor, 'user'> {
     email?: string;
     avatarUrl?: string;
     country?: string;
+  };
+}
+
+// Appointment Types (v2.4.0)
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+export type AppointmentStatus = 
+  | 'scheduled'
+  | 'confirmed'
+  | 'completed'
+  | 'cancelled_by_mentee'
+  | 'cancelled_by_mentor'
+  | 'no_show'
+  | 'rescheduled';
+
+export interface TimeSlot {
+  startTime: string; // HH:mm format
+  endTime: string;
+}
+
+export interface RecurringAvailability {
+  dayOfWeek: DayOfWeek;
+  slots: TimeSlot[];
+}
+
+export interface AvailabilityException {
+  id: string;
+  mentorId: string;
+  date: string;
+  isAvailable: boolean;
+  reason?: string;
+  slots?: TimeSlot[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MentorAvailability {
+  id: string;
+  mentorId: string;
+  timezone: string;
+  recurringSchedule: RecurringAvailability[];
+  exceptions: AvailabilityException[];
+  bufferTimeBetweenSessions: number;
+  advanceBookingDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AvailableSlot {
+  startTime: string;
+  endTime: string;
+  duration: number;
+}
+
+export interface Appointment {
+  id: string;
+  mentorId: string;
+  menteeId: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  status: AppointmentStatus;
+  meetingLink?: string;
+  notes?: string;
+  cancellationReason?: string;
+  rescheduledFrom?: string;
+  createdAt: string;
+  updatedAt: string;
+  mentor: {
+    id: string;
+    fullName: string;
+    email: string;
+    profilePhoto?: string;
+  };
+  mentee: {
+    id: string;
+    fullName: string;
+    email: string;
+    profilePhoto?: string;
+  };
+}
+
+export interface AppointmentsListResponse {
+  data: Appointment[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
 }
