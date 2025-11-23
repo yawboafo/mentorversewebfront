@@ -86,19 +86,19 @@ export default function MentorDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">Mentor Dashboard</h1>
           <p className="text-muted-foreground mt-2">Welcome back, {user.full_name}!</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <Button asChild variant="outline" className="w-full sm:w-auto justify-center">
             <Link href="/mentor/content/create">
               <Plus className="h-4 w-4 mr-2" />
               Manual Create
             </Link>
           </Button>
-          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600">
+          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 w-full sm:w-auto justify-center">
             <Link href="/mentor/ai-builder">
               <Sparkles className="h-4 w-4 mr-2" />
               AI Course Builder

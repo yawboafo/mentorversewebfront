@@ -76,9 +76,11 @@ export function AvailabilityCalendar() {
       setAdvanceBookingDays(availability.advanceBookingDays || 30);
       
       // Ensure recurringSchedule is an array and fill in missing days
-      const existingSchedule = availability.recurringSchedule || [];
+      const existingSchedule = Array.isArray(availability.recurringSchedule) 
+        ? availability.recurringSchedule 
+        : [];
       const fullSchedule = DAYS.map((day) => {
-        const existing = existingSchedule.find((s: RecurringAvailability) => s.dayOfWeek === day);
+        const existing = existingSchedule.find((s: any) => s && s.dayOfWeek === day);
         return existing || { dayOfWeek: day, slots: [] };
       });
       
