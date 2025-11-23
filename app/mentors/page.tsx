@@ -1,24 +1,66 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 import { mentorsApi, MentorsQuery } from '@/lib/api/mentors';
 import { Mentor } from '@/lib/api/types';
-import { Search, Users, Play, MapPin, Verified, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Briefcase, 
+  Code, 
+  TrendingUp, 
+  Heart, 
+  DollarSign,
+  Users,
+  Sparkles,
+  Award,
+  Target
+} from 'lucide-react';
+import { MentorProfileCard } from '@/components/mentor-profile-card';
+import { motion } from 'framer-motion';
 
 const ITEMS_PER_PAGE = 12;
 
+const EXPERTISE_CATEGORIES = [
+  { label: 'All Mentors', value: 'all', icon: Target },
+  { label: 'Entrepreneurship', value: 'entrepreneurship', icon: Briefcase },
+  { label: 'Business Strategy', value: 'business', icon: TrendingUp },
+  { label: 'Technology', value: 'technology', icon: Code },
+  { label: 'Leadership', value: 'leadership', icon: Award },
+  { label: 'Finance', value: 'finance', icon: DollarSign },
+  { label: 'Health & Wellness', value: 'health', icon: Heart },
+  { label: 'Media & Creative', value: 'media', icon: Sparkles },
+];
+
+const EXPERIENCE_LEVELS = [
+  { label: 'All Levels', value: 'all' },
+  { label: '5+ Years', value: '5' },
+  { label: '10+ Years', value: '10' },
+  { label: 'Industry Leaders (15+)', value: '15' },
+];
+
+// Temporarily disabled until backend adds mentorType field
+// const MENTOR_TYPES = [
+//   { label: 'All Types', value: 'all' },
+//   { label: 'Individual', value: 'individual' },
+//   { label: 'Business', value: 'business' },
+// ];
+
 export default function MentorsPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [featuredMentors, setFeaturedMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filters
+  const [selectedExpertise, setSelectedExpertise] = useState('all');
+  const [selectedExperience, setSelectedExperience] = useState('all');
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -27,22 +69,60 @@ export default function MentorsPage() {
     fetchMentors();
   }, [currentPage]);
 
-  const fetchMentors = async (query?: string) => {
+  useEffect(() => {
+    // Fetch featured mentors on initial load
+    fetchFeaturedMentors();
+  }, []);
+
+  const fetchFeaturedMentors = async () => {
+    try {
+      const response = await mentorsApi.getMentors({ 
+        page: 1, 
+        limit: 2,
+        // Could add a "featured" flag in the API
+      });
+      // For now, just take the first 2 mentors as featured
+      setFeaturedMentors((response.data || []).slice(0, 2));
+    } catch (error) {
+      console.error('Failed to fetch featured mentors:', error);
+    }
+  };
+
+  const fetchMentors = async (customQuery?: Partial<MentorsQuery>) => {
     try {
       setIsLoading(true);
-      const params: MentorsQuery = {
+      
+      const query: MentorsQuery = {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
+        ...customQuery
       };
+
+      // Add filters
+      if (searchQuery) query.q = searchQuery;
+
+      const response = await mentorsApi.getMentors(query);
+      let mentorsData = response.data || [];
       
-      if (query?.trim()) {
-        params.q = query.trim();
+      // Apply client-side filters
+      if (selectedExpertise !== 'all') {
+        mentorsData = mentorsData.filter(m =>
+          m.areasOfExpertise?.some(area => 
+            area.toLowerCase().includes(selectedExpertise.toLowerCase())
+          )
+        );
+      }
+
+      if (selectedExperience !== 'all') {
+        const minYears = parseInt(selectedExperience);
+        mentorsData = mentorsData.filter(m => 
+          (m.experienceYears || 0) >= minYears
+        );
       }
       
-      const response = await mentorsApi.getMentors(params);
-      setMentors(response.data || []);
-      setTotalItems(response.total || 0);
-      setTotalPages(Math.ceil((response.total || 0) / ITEMS_PER_PAGE));
+      setMentors(mentorsData);
+      setTotalItems(mentorsData.length);
+      setTotalPages(Math.ceil(mentorsData.length / ITEMS_PER_PAGE));
     } catch (error) {
       console.error('Failed to fetch mentors:', error);
       setMentors([]);
@@ -55,224 +135,242 @@ export default function MentorsPage() {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchMentors(searchQuery);
+    fetchMentors();
   };
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedExpertise('all');
+    setSelectedExperience('all');
+    setCurrentPage(1);
+    fetchMentors({});
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const hasActiveFilters = searchQuery || selectedExpertise !== 'all' || selectedExperience !== 'all';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Meet Your Mentors
-        </h1>
-        <p className="text-lg text-muted-foreground mb-6">
-          Real people. Real stories. Real growth. 🚀
-        </p>
-        
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search mentors by name, expertise..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10"
-            />
-          </div>
-          <Button onClick={handleSearch}>Search</Button>
+    <div className="min-h-screen bg-gradient-to-b from-orange-50/30 via-white to-amber-50/30 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+      {/* Hero Header Section */}
+      <div className="bg-gradient-to-br from-orange-600 via-amber-600 to-orange-700 dark:from-orange-900 dark:via-amber-900 dark:to-orange-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-3xl mx-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-4"
+            >
+              <h1 className="text-5xl md:text-6xl font-bold mb-4">
+                Find a Mentor
+              </h1>
+            </motion.div>
+            
+            <p className="text-xl md:text-2xl text-orange-50 mb-8 font-light">
+              Learn from real experts, leaders, and creators
+            </p>
+
+            {/* Centered Search Bar */}
+            <div className="relative max-w-2xl mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="Search by name, expertise, or industry..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-12 pr-4 h-14 text-base bg-white dark:bg-zinc-900 border-0 shadow-xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 focus:ring-2 focus:ring-orange-300 dark:focus:ring-orange-700"
+              />
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="h-64 w-full" />
-              <div className="p-4 space-y-3">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            </Card>
-          ))}
+      {/* Filter Section */}
+      <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+          {/* Expertise Pills */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Areas of Expertise</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {EXPERTISE_CATEGORIES.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <button
+                    key={category.value}
+                    onClick={() => {
+                      setSelectedExpertise(category.value);
+                      setCurrentPage(1);
+                      fetchMentors();
+                    }}
+                    className={`
+                      inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all
+                      ${selectedExpertise === category.value
+                        ? 'bg-orange-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                      }
+                    `}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Experience & Type Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Experience:</span>
+            {EXPERIENCE_LEVELS.map((level) => (
+              <button
+                key={level.value}
+                onClick={() => {
+                  setSelectedExperience(level.value);
+                  setCurrentPage(1);
+                  fetchMentors();
+                }}
+                className={`
+                  px-3 py-1.5 rounded-full text-sm font-medium transition-all
+                  ${selectedExperience === level.value
+                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700'
+                    : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-zinc-700 hover:border-orange-300 dark:hover:border-orange-700'
+                  }
+                `}
+              >
+                {level.label}
+              </button>
+            ))}
+
+            {hasActiveFilters && (
+              <>
+                <div className="h-6 w-px bg-gray-300 dark:bg-zinc-700 mx-2" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  Clear all filters
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      ) : mentors.length === 0 ? (
-        <div className="text-center py-20">
-          <Users className="h-20 w-20 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-2xl font-semibold mb-2">No mentors found</h3>
-          <p className="text-muted-foreground">Try adjusting your search criteria</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {mentors.map((mentor) => (
-            <Link key={mentor.id} href={`/mentors/${mentor.user?.id || mentor.userId}`}>
-              <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-2 hover:border-purple-200 dark:hover:border-purple-800">
-                {/* Profile Image Section */}
-                <div className="relative h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Avatar className="h-32 w-32 border-4 border-white dark:border-gray-800 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <AvatarImage 
-                        src={mentor.user.avatarUrl || mentor.profileImageUrl || undefined} 
-                        alt={mentor.user.fullName}
-                      />
-                      <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                        {getInitials(mentor.user.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  
-                  {/* Video indicator */}
-                  {mentor.introVideoUrl && (
-                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1 text-xs">
-                      <Play className="h-3 w-3 fill-white" />
-                      <span>Intro</span>
-                    </div>
-                  )}
-                  
-                  {/* Verified badge */}
-                  {mentor.isVerified && (
-                    <div className="absolute top-3 left-3">
-                      <div className="bg-blue-500 text-white p-1 rounded-full">
-                        <Verified className="h-4 w-4 fill-white" />
-                      </div>
-                    </div>
-                  )}
-                </div>
+      </div>
 
-                {/* Content Section */}
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-bold text-lg line-clamp-1 group-hover:text-purple-600 transition-colors">
-                      {mentor.user.fullName}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {mentor.headline}
-                    </p>
-                  </div>
+      {/* Main Content Area */}
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Featured Mentors Section */}
+        {!isLoading && !hasActiveFilters && featuredMentors.length > 0 && (
+          <section className="mb-16">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                <Sparkles className="h-7 w-7 text-orange-600" />
+                Featured Mentors
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Connect with our most experienced and highly-rated mentors
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {featuredMentors.map((mentor) => (
+                <MentorProfileCard 
+                  key={mentor.id} 
+                  mentor={mentor} 
+                  featured 
+                  priority
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-                  {/* Expertise badges */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {mentor.areasOfExpertise?.slice(0, 3).map((area) => (
-                      <Badge 
-                        key={area} 
-                        variant="secondary" 
-                        className="text-xs px-2 py-0.5"
-                      >
-                        {area}
-                      </Badge>
-                    ))}
-                    {(mentor.areasOfExpertise?.length || 0) > 3 && (
-                      <Badge variant="outline" className="text-xs px-2 py-0.5">
-                        +{(mentor.areasOfExpertise?.length || 0) - 3}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Experience */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="font-medium">{mentor.experienceYears} years experience</span>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="aspect-[4/5] w-full" />
+                <div className="p-6 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-24" />
                   </div>
                 </div>
               </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!isLoading && totalPages > 1 && (
-        <div className="mt-12 flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              // Show first page, last page, current page, and pages around current
-              if (
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 1 && page <= currentPage + 1)
-              ) {
-                return (
-                  <Button
-                    key={page}
-                    variant={page === currentPage ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                    className="min-w-[40px]"
-                  >
-                    {page}
-                  </Button>
-                );
-              } else if (page === currentPage - 2 || page === currentPage + 2) {
-                return <span key={page} className="px-2">...</span>;
-              }
-              return null;
-            })}
+            ))}
           </div>
+        )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
+        {/* Empty State */}
+        {!isLoading && mentors.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20"
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      )}
+            <Users className="h-20 w-20 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">No mentors found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Try adjusting your search or filters
+            </p>
+            {hasActiveFilters && (
+              <Button onClick={handleClearFilters} variant="outline">
+                Clear all filters
+              </Button>
+            )}
+          </motion.div>
+        )}
 
-      {/* Results info */}
-      {!isLoading && totalItems > 0 && (
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems} mentors
-        </div>
-      )}
-      
-      {/* Empty state */}
-      {!isLoading && mentors.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Users className="h-16 w-16 text-muted-foreground/50 mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No mentors found</h3>
-          <p className="text-muted-foreground mb-6">
-            {searchQuery 
-              ? "Try adjusting your search query or browse all mentors" 
-              : "Start by browsing available mentors or searching for specific expertise"}
-          </p>
-          {searchQuery && (
-            <Button onClick={() => { 
-              setSearchQuery(''); 
-              setCurrentPage(1);
-              fetchMentors();
-            }}>
-              Clear Search
+        {/* All Mentors Section */}
+        {!isLoading && mentors.length > 0 && (
+          <section>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {hasActiveFilters ? 'Search Results' : 'All Mentors'}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {totalItems} {totalItems === 1 ? 'mentor' : 'mentors'} available
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mentors.map((mentor, index) => (
+                <MentorProfileCard 
+                  key={mentor.id} 
+                  mentor={mentor}
+                  priority={index < 6}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Load More */}
+        {!isLoading && totalPages > 1 && currentPage < totalPages && (
+          <div className="mt-12 text-center">
+            <Button
+              onClick={() => {
+                setCurrentPage(currentPage + 1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              size="lg"
+              className="bg-orange-600 hover:bg-orange-700 text-white px-8 shadow-lg hover:shadow-xl transition-all"
+            >
+              Load More Mentors
             </Button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
