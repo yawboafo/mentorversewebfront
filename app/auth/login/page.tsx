@@ -117,7 +117,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-950 dark:to-gray-900 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <motion.div
         className="w-full max-w-[420px]"
         initial={{ opacity: 0, y: 20 }}
@@ -125,13 +125,13 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
       >
         {/* Main Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-800/60 p-8">
+        <div className="bg-card rounded-2xl shadow-soft-lg border border-border p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Welcome back 👋
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Jump back into your mentorship journey
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </Label>
               <Input
@@ -169,12 +169,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors"
+                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                 >
                   Forgot?
                 </Link>
@@ -193,7 +193,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -206,13 +206,13 @@ export default function LoginPage() {
             >
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all" 
+                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-sm hover:shadow-md transition-all" 
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
                     <motion.div
-                      className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"
+                      className="mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full"
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     />
@@ -224,9 +224,9 @@ export default function LoginPage() {
               </Button>
             </motion.div>
 
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors">
+              <Link href="/auth/register" className="font-semibold text-primary hover:text-primary/80 transition-colors">
                 Sign up
               </Link>
             </p>
@@ -239,12 +239,12 @@ export default function LoginPage() {
                 <Separator />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">or</span>
+                <span className="bg-card px-2 text-muted-foreground">or</span>
               </div>
             </div>
 
             <div className="mt-6 space-y-3">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 text-center mb-4">
+              <p className="text-sm font-medium text-muted-foreground text-center mb-4">
                 Continue with
               </p>
               <SocialLoginGroup
@@ -256,15 +256,15 @@ export default function LoginPage() {
           </div>
 
           {/* Mentor CTA */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
-            <p className="text-center text-sm text-gray-500 dark:text-gray-500 mb-3">
+          <div className="mt-8 pt-6 border-t border-border">
+            <p className="text-center text-sm text-muted-foreground mb-3">
               Want to mentor others?
             </p>
             <Link href="/mentor/join">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 text-sm font-medium rounded-xl border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                className="w-full h-11 text-sm font-medium rounded-xl transition-all"
               >
                 I'm a mentor
               </Button>
