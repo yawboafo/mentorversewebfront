@@ -56,16 +56,33 @@ export function AvailabilityCalendar() {
       setLoading(true);
       // Get current user's mentor ID (you'll need to get this from your auth context)
       const userStr = localStorage.getItem('user');
-      if (!userStr) return;
+      if (!userStr) {
+        // Initialize empty schedule if no user
+        setSchedule(
+          DAYS.map((day) => ({
+            dayOfWeek: day,
+            slots: [],
+          }))
+        );
+        return;
+      }
       
       const user = JSON.parse(userStr);
       const availability = await appointmentsApi.getMentorAvailability(user.id);
       
       setAvailability(availability);
-      setTimezone(availability.timezone);
-      setBufferTime(availability.bufferTimeBetweenSessions);
-      setAdvanceBookingDays(availability.advanceBookingDays);
-      setSchedule(availability.recurringSchedule);
+      setTimezone(availability.timezone || 'America/New_York');
+      setBufferTime(availability.bufferTimeBetweenSessions || 15);
+      setAdvanceBookingDays(availability.advanceBookingDays || 30);
+      
+      // Ensure recurringSchedule is an array and fill in missing days
+      const existingSchedule = availability.recurringSchedule || [];
+      const fullSchedule = DAYS.map((day) => {
+        const existing = existingSchedule.find((s: RecurringAvailability) => s.dayOfWeek === day);
+        return existing || { dayOfWeek: day, slots: [] };
+      });
+      
+      setSchedule(fullSchedule);
     } catch (error: any) {
       if (error.status === 404) {
         // No availability set yet, initialize empty schedule
@@ -77,6 +94,13 @@ export function AvailabilityCalendar() {
         );
       } else {
         console.error('Failed to load availability:', error);
+        // Initialize empty schedule on error too
+        setSchedule(
+          DAYS.map((day) => ({
+            dayOfWeek: day,
+            slots: [],
+          }))
+        );
       }
     } finally {
       setLoading(false);
@@ -227,7 +251,7 @@ export function AvailabilityCalendar() {
         </CardHeader>
         <CardContent className="space-y-6">
           {DAYS.map((day) => {
-            const daySchedule = schedule.find((s) => s.dayOfWeek === day);
+            const daySchedule = (schedule || []).find((s) => s.dayOfWeek === day);
             if (!daySchedule) return null;
 
             return (
