@@ -132,6 +132,29 @@ export const mentorsApi = {
     return apiClient.get<UserMentorsResponse>('/me/subscriptions');
   },
 
+  /**
+   * Get mentor's subscribers (people who subscribed to this mentor)
+   */
+  async getSubscribers(): Promise<{ data: any[] }> {
+    return apiClient.get<{ data: any[] }>('/mentor/subscribers');
+  },
+
+  /**
+   * Get single mentee details
+   * @param menteeId - The mentee's user ID
+   */
+  async getMenteeDetails(menteeId: string): Promise<MenteeDetails> {
+    return apiClient.get<MenteeDetails>(`/mentor/mentees/${menteeId}`);
+  },
+
+  /**
+   * Get mentee's enrolled courses with this mentor
+   * @param menteeId - The mentee's user ID
+   */
+  async getMenteeCourses(menteeId: string): Promise<{ data: any[] }> {
+    return apiClient.get<{ data: any[] }>(`/mentor/mentees/${menteeId}/courses`);
+  },
+
   // =============== SUBSCRIPTION API ===============
   
   /**

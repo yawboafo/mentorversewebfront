@@ -80,7 +80,6 @@ export function Navbar() {
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/mentors', label: 'Mentors', icon: Users },
         { href: '/content', label: 'Courses', icon: BookOpen },
-        { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
         { href: '/admin', label: 'Admin', icon: Shield },
       ];
     }
@@ -93,7 +92,6 @@ export function Navbar() {
         { href: '/mentor/content', label: 'My Content', icon: BookOpen },
         { href: '/mentor/content/create', label: 'Create', icon: Plus },
         { href: '/mentors', label: 'Browse Mentors', icon: Users },
-        { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
       ];
     }
 
@@ -108,7 +106,6 @@ export function Navbar() {
           { href: '/mentor/pending', label: 'Application Status', icon: LayoutDashboard },
           { href: '/mentors', label: 'Mentors', icon: Users },
           { href: '/content', label: 'Courses', icon: BookOpen },
-          { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
         ];
       } else if (mentorStatus === 'none') {
         // Need to complete application
@@ -116,26 +113,17 @@ export function Navbar() {
           { href: '/mentor/apply', label: 'Complete Application', icon: LayoutDashboard },
           { href: '/mentors', label: 'Mentors', icon: Users },
           { href: '/content', label: 'Courses', icon: BookOpen },
-          { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
         ];
       }
     }
     
     // Regular user navigation
-    const baseLinks = [
+    return [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/mentors', label: 'My Mentors', icon: Users },
       { href: '/mentors', label: 'Browse Mentors', icon: Users },
       { href: '/content', label: 'Courses', icon: BookOpen },
-      { href: '/ai/chat', label: 'AI Mentor', icon: MessageSquare },
     ];
-    
-    // Only show "Become a Mentor" for regular users (not mentor intent)
-    if (user?.signup_intent !== 'mentor') {
-      baseLinks.push({ href: '/mentor/join', label: 'Become a Mentor', icon: Sparkles });
-    }
-    
-    return baseLinks;
   };
 
   const navLinks = getNavLinks();

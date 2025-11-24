@@ -13,9 +13,10 @@ import { appointmentsApi } from '@/lib/api/appointments';
 import { contentApi } from '@/lib/api/content';
 import type { Appointment } from '@/lib/api/appointments';
 import { MentorDashboard } from '@/lib/api/types';
-import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
+import { UpcomingSessions } from '@/components/mentor/upcoming-sessions';
 
 export default function MentorDashboardPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
@@ -110,16 +111,10 @@ export default function MentorDashboardPage() {
           <p className="text-muted-foreground mt-2">Welcome back, {user.full_name}!</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-          <Button asChild variant="outline" className="w-full sm:w-auto justify-center">
+          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 w-full sm:w-auto justify-center">
             <Link href="/mentor/content/create">
               <Plus className="h-4 w-4 mr-2" />
-              Manual Create
-            </Link>
-          </Button>
-          <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 w-full sm:w-auto justify-center">
-            <Link href="/mentor/ai-builder">
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Course Builder
+              Create Content
             </Link>
           </Button>
         </div>
@@ -202,24 +197,11 @@ export default function MentorDashboardPage() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Button variant="outline" asChild className="h-auto py-4">
-          <Link href="/mentor/availability">
-            <Calendar className="h-5 w-5 mr-2" />
-            Manage Availability
-          </Link>
-        </Button>
-        <Button variant="outline" asChild className="h-auto py-4">
-          <Link href="/mentor/appointments">
-            <Clock className="h-5 w-5 mr-2" />
-            View All Appointments
-          </Link>
-        </Button>
-      </div>
+      {/* Appointments Section */}
+      <UpcomingSessions appointments={upcomingAppointments} isLoading={isLoading} />
 
-      {/* Upcoming Appointments */}
-      {upcomingAppointments.length > 0 && (
+      {/* Legacy Section - Can be removed */}
+      {false && upcomingAppointments.length > 0 && (
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Upcoming Sessions</h2>
@@ -325,8 +307,8 @@ export default function MentorDashboardPage() {
         </section>
       )}
 
-      {/* AI Builder CTA - Show if no content */}
-      {(!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
+      {/* AI Builder CTA - Removed to reduce duplicate CTAs */}
+      {false && (!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
         <Card className="mb-12 border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
@@ -440,8 +422,8 @@ export default function MentorDashboardPage() {
         </section>
       )}
 
-      {/* Empty State */}
-      {(!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
+      {/* Empty State - Removed to reduce duplicate CTAs */}
+      {false && (!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
         <Card className="p-12 text-center">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-2xl font-bold mb-2">Start Creating Content</h3>

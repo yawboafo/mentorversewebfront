@@ -2,18 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
-import { MenteeDetails, MenteesResponse } from '@/lib/api/types';
-import { Users, Search, Loader2, Mail, MapPin, Calendar, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus, UserPlus, ShoppingCart } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format } from 'date-fns';
+import { MenteeDetails } from '@/lib/api/types';
+import { Users, Search, Loader2, GraduationCap, Plus, UserPlus, ShoppingCart, BookOpen } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MenteeCard } from '@/components/mentor/mentee-card';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -48,16 +46,27 @@ export default function MenteesPage() {
 
   const fetchAllMenteesForCounts = async () => {
     try {
-      // Fetch all mentees without pagination to get accurate counts
-      const response = await mentorsApi.getMentees({
+      // Fetch mentees (students who purchased content)
+      const menteesResponse = await mentorsApi.getMentees({
         limit: 1000, // Large limit to get all mentees
       });
-      const allData = response.data || [];
-      const purchases = allData.filter(m => m.relationship_type === 'purchase_based').length;
-      const subscriptions = allData.filter(m => m.relationship_type === 'subscription').length;
+      const menteesData = menteesResponse.data || [];
+      console.log('📊 Mentees (purchases):', menteesData.length);
+      
+      // Fetch subscribers
+      let subscribersCount = 0;
+      try {
+        const subscribersResponse = await mentorsApi.getSubscribers();
+        subscribersCount = subscribersResponse.data?.length || 0;
+        console.log('📊 Subscribers:', subscribersCount);
+      } catch (subErr) {
+        console.log('⚠️ Could not fetch subscribers:', subErr);
+      }
+      
+      const purchases = menteesData.length;
       setPurchaseCount(purchases);
-      setSubscriptionCount(subscriptions);
-      console.log('📊 Counts - Purchases:', purchases, 'Subscriptions:', subscriptions);
+      setSubscriptionCount(subscribersCount);
+      console.log('📊 Final Counts - Purchases:', purchases, 'Subscriptions:', subscribersCount);
     } catch (err: any) {
       console.error('Error fetching counts:', err);
     }
@@ -67,14 +76,54 @@ export default function MenteesPage() {
     try {
       setIsLoading(true);
       setError('');
-      const response = await mentorsApi.getMentees({
+      
+      // Fetch mentees (purchase-based)
+      const menteesResponse = await mentorsApi.getMentees({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
         search: searchQuery || undefined,
       });
-      setAllMentees(response.data || []);
-      setTotalMentees(response.pagination?.total || 0);
-      setTotalPages(response.pagination?.total_pages || 1);
+      const menteesList = menteesResponse.data || [];
+      
+      // Fetch subscribers and transform to mentee format
+      let subscribersList: MenteeDetails[] = [];
+      try {
+        const subscribersResponse = await mentorsApi.getSubscribers();
+        const subscribers = subscribersResponse.data || [];
+        
+        // Transform subscriber format to match MenteeDetails
+        subscribersList = subscribers.map((sub: any) => ({
+          relationship_type: 'subscription',
+          status: sub.subscription?.status || 'active',
+          purchased_content: [],
+          mentee: {
+            id: sub.id,
+            full_name: sub.fullName,
+            email: sub.email,
+            avatar_url: sub.profilePhoto,
+            account_type: 'student',
+            country: null,
+            bio: null,
+          },
+          first_connected_at: sub.subscription?.subscribedAt || new Date().toISOString(),
+        }));
+      } catch (subErr) {
+        console.log('⚠️ Could not fetch subscribers for list:', subErr);
+      }
+      
+      // Combine both lists
+      const combinedList = [...menteesList, ...subscribersList];
+      
+      console.log('📋 Combined list:', {
+        mentees: menteesList.length,
+        subscribers: subscribersList.length,
+        total: combinedList.length,
+        subscribersList: subscribersList
+      });
+      
+      setAllMentees(combinedList);
+      setTotalMentees(combinedList.length);
+      setTotalPages(Math.ceil(combinedList.length / ITEMS_PER_PAGE));
     } catch (err: any) {
       console.error('Error fetching mentees:', err);
       setError(err.message || 'Failed to load mentees. Please try again later.');
@@ -94,16 +143,6 @@ export default function MenteesPage() {
     if (e.key === 'Enter') {
       handleSearch();
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; label: string }> = {
-      active: { variant: 'default', label: 'Active' },
-      paused: { variant: 'secondary', label: 'Paused' },
-      ended: { variant: 'outline', label: 'Ended' },
-    };
-    const config = variants[status] || variants.active;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   if (authLoading || !user) {
@@ -205,15 +244,16 @@ export default function MenteesPage() {
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
             <Card key={i}>
               <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-16 w-16 rounded-full" />
-                  <div className="flex-1">
-                    <Skeleton className="h-5 w-48 mb-2" />
-                    <Skeleton className="h-4 w-64" />
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-14 w-14 rounded-full flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full mb-3" />
+                    <Skeleton className="h-3 w-24" />
                   </div>
                 </div>
               </CardContent>
@@ -279,90 +319,10 @@ export default function MenteesPage() {
         </Card>
       ) : (
         <>
-          {/* Mentees List */}
-          <div className="space-y-4 mb-8">
+          {/* Mentees Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {mentees.map((mentee) => (
-              <Card key={mentee.mentee.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={mentee.mentee.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                        {mentee.mentee.full_name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {/* Info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-lg font-semibold">{mentee.mentee.full_name}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            <div className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {mentee.mentee.email}
-                            </div>
-                            {mentee.mentee.country && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {mentee.mentee.country}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{mentee.mentee.account_type}</Badge>
-                          {mentee.relationship_type === 'purchase_based' ? (
-                            <Badge variant="default" className="gap-1 bg-green-500">
-                              <ShoppingCart className="h-3 w-3" />
-                              Purchased
-                            </Badge>
-                          ) : mentee.relationship_type === 'subscription' ? (
-                            <Badge variant="default" className="gap-1 bg-blue-500">
-                              <UserPlus className="h-3 w-3" />
-                              Subscriber
-                            </Badge>
-                          ) : null}
-                          {getStatusBadge(mentee.status)}
-                        </div>
-                      </div>
-
-                      {/* Purchased Content */}
-                      {mentee.purchased_content.length > 0 && (
-                        <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <BookOpen className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              Purchased Content ({mentee.purchased_content.length})
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {mentee.purchased_content.map((content) => (
-                              <Badge key={content.id} variant="secondary" className="gap-1">
-                                {content.title}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Footer */}
-                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Joined {format(new Date(mentee.first_connected_at), 'MMM d, yyyy')}
-                        </div>
-                        {mentee.last_activity_at && (
-                          <div>
-                            Last active {format(new Date(mentee.last_activity_at), 'MMM d, yyyy')}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <MenteeCard key={mentee.mentee.id} mentee={mentee} />
             ))}
           </div>
 
