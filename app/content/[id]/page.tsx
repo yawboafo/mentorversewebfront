@@ -591,6 +591,11 @@ export default function CourseDetailPage() {
 
                   <Separator />
 
+                  {/* DEBUG: Version check */}
+                  <div className="text-xs text-center text-muted-foreground mb-2">
+                    v2024-11-24-debug • State: {checkingPurchase ? 'loading' : isPurchased ? 'enrolled' : 'ready'}
+                  </div>
+
                   {/* Primary CTA - Dynamic based on enrollment */}
                   {(() => {
                     console.log('🔍 Button State Debug:', { checkingPurchase, isPurchased, contentId });
