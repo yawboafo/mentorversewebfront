@@ -68,19 +68,8 @@ export const contentApi = {
   },
 
   async checkout(request: CheckoutRequest): Promise<CheckoutResponse> {
+    console.log('💳 Checkout request:', JSON.stringify(request, null, 2));
     return apiClient.post<CheckoutResponse>('/payments/checkout', request);
-  },
-
-  /**
-   * Check if the current user is enrolled in a specific content
-   */
-  async getEnrollmentStatus(contentId: string): Promise<{ isEnrolled: boolean; enrolledAt?: string }> {
-    try {
-      return await apiClient.get<{ isEnrolled: boolean; enrolledAt?: string }>(`/content/${contentId}/enrollment`);
-    } catch (error) {
-      // If 404 or unauthorized, user is not enrolled
-      return { isEnrolled: false };
-    }
   },
 
   /**

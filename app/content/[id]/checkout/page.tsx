@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
+import { usePurchaseStatus } from '@/hooks/use-purchase-status';
 import { contentApi } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
 import { PriceDisplay } from '@/components/ui/price-display';
@@ -29,6 +30,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const contentId = params.id as string;
   const { user, isAuthenticated } = useAuth();
+  const { isPurchased, loading: checkingPurchase } = usePurchaseStatus(contentId);
 
   const [content, setContent] = useState<Content | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,14 +46,6 @@ export default function CheckoutPage() {
 
     const fetchContent = async () => {
       try {
-        // Check enrollment status first
-        const enrollmentStatus = await contentApi.getEnrollmentStatus(contentId);
-        if (enrollmentStatus.isEnrolled) {
-          toast.info('You are already enrolled in this course');
-          router.push(`/content/${contentId}`);
-          return;
-        }
-
         const contentData = await contentApi.getContentById(contentId);
         setContent(contentData);
       } catch (error) {
@@ -64,6 +58,14 @@ export default function CheckoutPage() {
 
     fetchContent();
   }, [contentId, isAuthenticated, router]);
+
+  // Check if already purchased and redirect
+  useEffect(() => {
+    if (!checkingPurchase && isPurchased) {
+      toast.info('You have already purchased this course');
+      router.push(`/content/${contentId}`);
+    }
+  }, [isPurchased, checkingPurchase, contentId, router]);
 
   const handleCheckout = async () => {
     if (!content) return;
@@ -81,7 +83,10 @@ export default function CheckoutPage() {
       console.error('Checkout failed:', error);
       
       // Handle specific error cases
-      if (error.message?.includes('already purchased')) {
+      if (error.status === 500) {
+        toast.error('Payment system error. Please contact support or try again later.');
+        setError('The payment system is currently unavailable. This may be due to missing payment configuration on the backend.');
+      } else if (error.message?.includes('already purchased')) {
         toast.error('You have already purchased this content');
         router.push(`/content/${contentId}`);
       } else if (error.message?.includes('not found')) {
@@ -96,7 +101,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || checkingPurchase) {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
