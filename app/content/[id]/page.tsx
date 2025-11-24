@@ -622,7 +622,11 @@ export default function CourseDetailPage() {
                   ) : (
                     <Link 
                       href={`/content/${contentId}/checkout`}
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-14 px-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      prefetch={true}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-14 px-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+                      onClick={(e) => {
+                        console.log('Enroll Now clicked, navigating to:', `/content/${contentId}/checkout`);
+                      }}
                     >
                       <ShoppingCart className="h-5 w-5 mr-2" />
                       Enroll Now
