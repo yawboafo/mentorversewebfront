@@ -18,9 +18,7 @@ import {
 import { contentApi } from '@/lib/api/content';
 import { modulesApi } from '@/lib/api/modules';
 import { usePurchaseStatus } from '@/hooks/use-purchase-status';
-import { useAuth } from '@/hooks/use-auth';
 import { Content, ContentModule, ContentResource } from '@/lib/api/types';
-import { useRouter } from 'next/navigation';
 
 interface ContentModuleWithResources extends ContentModule {
   resources?: ContentResource[];
@@ -62,9 +60,7 @@ import { PriceDisplay } from '@/components/ui/price-display';
 
 export default function CourseDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const contentId = params.id as string;
-  const { user, isAuthenticated } = useAuth();
   const { isPurchased, loading: checkingPurchase, purchase } = usePurchaseStatus(contentId);
   
   const [content, setContent] = useState<Content | null>(null);
@@ -102,17 +98,6 @@ export default function CourseDetailPage() {
     if (!bytes) return '';
     const mb = bytes / (1024 * 1024);
     return mb < 1 ? `${(bytes / 1024).toFixed(0)} KB` : `${mb.toFixed(1)} MB`;
-  };
-
-  const handleEnrollClick = (e: React.MouseEvent) => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      e.preventDefault();
-      // Redirect to login with return URL
-      router.push(`/auth/login?redirect=/content/${contentId}/checkout`);
-      return;
-    }
-    // If authenticated, the Link will handle navigation to checkout
   };
 
   useEffect(() => {
@@ -634,7 +619,7 @@ export default function CourseDetailPage() {
                         </Link>
                       </Button>
                     </div>
-                  ) : isAuthenticated ? (
+                  ) : (
                     <Button 
                       size="lg" 
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -644,15 +629,6 @@ export default function CourseDetailPage() {
                         <ShoppingCart className="h-5 w-5 mr-2" />
                         Enroll Now
                       </Link>
-                    </Button>
-                  ) : (
-                    <Button 
-                      size="lg" 
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                      onClick={handleEnrollClick}
-                    >
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      Enroll Now
                     </Button>
                   )}
 
