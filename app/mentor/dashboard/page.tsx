@@ -308,7 +308,7 @@ export default function MentorDashboardPage() {
       )}
 
       {/* AI Builder CTA - Removed to reduce duplicate CTAs */}
-      {false && (!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
+      {false && (!dashboardData?.top_content || dashboardData?.top_content.length === 0) && (
         <Card className="mb-12 border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
@@ -423,7 +423,7 @@ export default function MentorDashboardPage() {
       )}
 
       {/* Empty State - Removed to reduce duplicate CTAs */}
-      {false && (!dashboardData?.top_content || dashboardData.top_content.length === 0) && (
+      {false && (!dashboardData?.top_content || dashboardData?.top_content.length === 0) && (
         <Card className="p-12 text-center">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-2xl font-bold mb-2">Start Creating Content</h3>
