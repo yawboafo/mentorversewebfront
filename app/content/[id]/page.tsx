@@ -620,30 +620,23 @@ export default function CourseDetailPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Button 
-                      size="lg" 
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                      asChild
+                    <Link 
+                      href={`/content/${contentId}/checkout`}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-14 px-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      <Link href={`/content/${contentId}/checkout`}>
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Enroll Now
-                      </Link>
-                    </Button>
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Enroll Now
+                    </Link>
                   )}
 
                   {/* Secondary CTA */}
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="w-full h-12 text-base font-semibold rounded-xl"
-                    asChild
+                  <Link 
+                    href={`/mentors/${content.mentor.id}`}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-12 px-6 w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    <Link href={`/mentors/${content.mentor.id}`}>
-                      <UserCheck className="h-5 w-5 mr-2" />
-                      View Mentor Profile
-                    </Link>
-                  </Button>
+                    <UserCheck className="h-5 w-5 mr-2" />
+                    View Mentor Profile
+                  </Link>
 
                   <Separator />
 
