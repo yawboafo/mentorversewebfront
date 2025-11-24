@@ -592,6 +592,10 @@ export default function CourseDetailPage() {
                   <Separator />
 
                   {/* Primary CTA - Dynamic based on enrollment */}
+                  {(() => {
+                    console.log('🔍 Button State Debug:', { checkingPurchase, isPurchased, contentId });
+                    return null;
+                  })()}
                   {checkingPurchase ? (
                     <Button 
                       size="lg" 
