@@ -72,6 +72,28 @@ export default function CourseDetailPage() {
   const [previewResource, setPreviewResource] = useState<any>(null);
   const [courseProgress, setCourseProgress] = useState<CourseProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
+  const [startingCourse, setStartingCourse] = useState(false);
+
+  const handleStartCourse = async () => {
+    if (!isPurchased || startingCourse) return;
+    
+    setStartingCourse(true);
+    try {
+      const progress = await learningApi.startCourse(contentId);
+      if (progress) {
+        setCourseProgress(progress);
+        // Navigate to first module/resource if available
+        if (modules.length > 0 && modules[0].resources && modules[0].resources.length > 0) {
+          // For now, just refresh the progress display
+          // TODO: Navigate to actual course content viewer when implemented
+        }
+      }
+    } catch (error) {
+      console.error('Failed to start course:', error);
+    } finally {
+      setStartingCourse(false);
+    }
+  };
 
   const getResourceIcon = (type: string) => {
     switch (type) {
@@ -653,12 +675,20 @@ export default function CourseDetailPage() {
                       <Button 
                         size="lg" 
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                        asChild
+                        onClick={handleStartCourse}
+                        disabled={startingCourse || loadingProgress}
                       >
-                        <Link href={`/dashboard`}>
-                          <Play className="h-5 w-5 mr-2" />
-                          {courseProgress && courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Course'}
-                        </Link>
+                        {startingCourse ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Starting course...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-5 w-5 mr-2" />
+                            {courseProgress && courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Course'}
+                          </>
+                        )}
                       </Button>
 
                       {/* Milestone Celebration (if applicable) */}
