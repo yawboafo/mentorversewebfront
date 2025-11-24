@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,7 +55,6 @@ import {
   Link as LinkIcon,
   Music,
   Download,
-  Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PriceDisplay } from '@/components/ui/price-display';
