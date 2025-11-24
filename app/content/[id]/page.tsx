@@ -634,24 +634,25 @@ export default function CourseDetailPage() {
                         </Link>
                       </Button>
                     </div>
+                  ) : isAuthenticated ? (
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                      asChild
+                    >
+                      <Link href={`/content/${contentId}/checkout`}>
+                        <ShoppingCart className="h-5 w-5 mr-2" />
+                        Enroll Now
+                      </Link>
+                    </Button>
                   ) : (
                     <Button 
                       size="lg" 
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
                       onClick={handleEnrollClick}
-                      asChild={isAuthenticated}
                     >
-                      {isAuthenticated ? (
-                        <Link href={`/content/${contentId}/checkout`}>
-                          <ShoppingCart className="h-5 w-5 mr-2" />
-                          Enroll Now
-                        </Link>
-                      ) : (
-                        <>
-                          <ShoppingCart className="h-5 w-5 mr-2" />
-                          Enroll Now
-                        </>
-                      )}
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Enroll Now
                     </Button>
                   )}
 
