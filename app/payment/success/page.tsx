@@ -15,13 +15,18 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
   const [status, setStatus] = useState<VerificationStatus>('verifying');
   const [purchase, setPurchase] = useState<Purchase | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    // Wait for auth to load before checking authentication
+    if (authLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
@@ -33,7 +38,7 @@ function PaymentSuccessContent() {
     }
 
     verifyPayment(reference);
-  }, [reference, isAuthenticated, router]);
+  }, [reference, isAuthenticated, authLoading, router]);
 
   const verifyPayment = async (ref: string) => {
     try {
