@@ -160,7 +160,7 @@ describe('Content API', () => {
       const newContent = {
         title: 'New Course',
         description: 'Course description',
-        content_type: 'course',
+        contentType: 'course' as const,
         price: 99,
       };
 
@@ -232,10 +232,10 @@ describe('Content API', () => {
 
       mockApiClient.post.mockResolvedValueOnce(mockResponse);
 
-      const result = await contentApi.checkout({ content_id: 'c1' });
+      const result = await contentApi.checkout({ contentId: 'c1' });
 
       expect(mockApiClient.post).toHaveBeenCalledWith('/payments/checkout', {
-        content_id: 'c1',
+        contentId: 'c1',
       });
       expect(result).toEqual(mockResponse);
     });
