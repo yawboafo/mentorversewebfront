@@ -102,16 +102,16 @@ export default function AIBuilderPage() {
           console.log(`✅ Created module ${i + 1}:`, createdModule.title || createdModule.id);
           
           // Create resources for this module
-          // Note: AI outline has resources as array of strings
+          // Note: AI outline has resources as array of strings or Resource objects
           if (outlineModule.resources && outlineModule.resources.length > 0) {
             for (let j = 0; j < outlineModule.resources.length; j++) {
-              const resourceTitle = outlineModule.resources[j];
+              const resource = outlineModule.resources[j];
               const resourcePayload = {
                 moduleId: createdModule.id,
-                title: typeof resourceTitle === 'string' ? resourceTitle : resourceTitle.title,
-                description: typeof resourceTitle === 'string' ? '' : resourceTitle.description,
-                resourceType: 'document' as const,
-                url: typeof resourceTitle === 'string' ? 'https://example.com/resource' : (resourceTitle.url || 'https://example.com/resource'),
+                title: typeof resource === 'string' ? resource : resource.title,
+                description: '', // Resource type doesn't have description field
+                resourceType: (typeof resource === 'object' && resource.type ? resource.type : 'document') as const,
+                url: typeof resource === 'string' ? 'https://example.com/resource' : (resource.url || 'https://example.com/resource'),
                 orderIndex: j,
                 isPreview: j === 0, // First resource is preview
               };
