@@ -18,6 +18,7 @@ import { MessageSquare, Users, BookOpen, ArrowRight, Loader2, Calendar, Clock, V
 import { useState } from 'react';
 import { DashboardData } from '@/lib/api/types';
 import { format, parseISO } from 'date-fns';
+import { ContinueLearning } from '@/components/dashboard/continue-learning';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -141,8 +142,11 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Continue Learning Section */}
+      <ContinueLearning />
+
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 mt-12">
         {/* Consolidated Mentors Card */}
         <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-purple-200 dark:border-purple-800">
           <CardContent className="pt-6">

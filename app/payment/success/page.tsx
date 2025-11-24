@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, ArrowRight, Play } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { purchasesApi, Purchase } from '@/lib/api/purchases';
 
@@ -89,14 +89,14 @@ function PaymentSuccessContent() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
-        <CardContent className="pt-6 text-center space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+      <Card className="max-w-2xl w-full shadow-xl border-2">
+        <CardContent className="pt-8 space-y-6">
           {/* Verifying */}
           {status === 'verifying' && (
-            <>
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            <div className="text-center space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mx-auto">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold">Verifying Payment</h2>
@@ -104,7 +104,7 @@ function PaymentSuccessContent() {
                   Please wait while we confirm your payment...
                 </p>
               </div>
-            </>
+            </div>
           )}
 
           {/* Pending */}
@@ -127,37 +127,92 @@ function PaymentSuccessContent() {
 
           {/* Success */}
           {status === 'success' && (
-            <>
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mx-auto">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold">Payment Successful!</h2>
-                <p className="text-muted-foreground">
-                  {purchase?.status === 'paid' 
-                    ? "Your enrollment is complete. Redirecting to your course..."
-                    : "Your payment is being processed. You'll receive confirmation shortly."}
-                </p>
-                {purchase?.content && (
-                  <p className="text-sm font-medium text-primary mt-4">
-                    {purchase.content.title}
+            <div className="space-y-8">
+              {/* Success Icon & Message */}
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 mx-auto animate-in zoom-in duration-300">
+                  <CheckCircle2 className="h-10 w-10 text-green-600" />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold">You're in!</h1>
+                  <p className="text-xl text-muted-foreground">
+                    {purchase?.content?.title && `Welcome to ${purchase.content.title}`}
                   </p>
-                )}
+                  <p className="text-sm text-muted-foreground">
+                    Your journey starts now
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-col gap-3">
+
+              {/* Course Preview Card */}
+              {purchase?.content && (
+                <div className="bg-muted/50 rounded-xl p-6 space-y-4 border-2 border-dashed">
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg">{purchase.content.title}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {purchase.content.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Lifetime access</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Learn at your pace</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Next Steps */}
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground mb-4">
+                    Ready to begin?
+                  </p>
+                </div>
+                
+                {/* Primary CTA */}
                 {purchase?.contentId && (
-                  <Button asChild size="lg">
+                  <Button asChild size="lg" className="w-full text-lg h-14 shadow-lg">
                     <Link href={`/content/${purchase.contentId}`}>
-                      Go to Course
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <Play className="mr-2 h-5 w-5" />
+                      Start Your First Lesson
                     </Link>
                   </Button>
                 )}
-                <Button asChild variant="outline">
-                  <Link href="/dashboard">View Dashboard</Link>
-                </Button>
+
+                {/* Secondary Actions */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button asChild variant="outline" className="h-12">
+                    <Link href="/dashboard">
+                      View Dashboard
+                    </Link>
+                  </Button>
+                  {purchase?.contentId && (
+                    <Button asChild variant="outline" className="h-12">
+                      <Link href={`/content/${purchase.contentId}`}>
+                        View Syllabus
+                      </Link>
+                    </Button>
+                  )}
+                </div>
               </div>
-            </>
+
+              {/* Confirmation Note */}
+              <div className="text-center text-sm text-muted-foreground pt-4 border-t">
+                <p>Receipt sent to your email • Access anytime from your dashboard</p>
+              </div>
+            </div>
           )}
 
           {/* Error */}

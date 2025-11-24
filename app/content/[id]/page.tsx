@@ -19,7 +19,9 @@ import {
 import { contentApi } from '@/lib/api/content';
 import { modulesApi } from '@/lib/api/modules';
 import { usePurchaseStatus } from '@/hooks/use-purchase-status';
+import { learningApi, CourseProgress } from '@/lib/api/learning';
 import { Content, ContentModule, ContentResource } from '@/lib/api/types';
+import { Progress } from '@/components/ui/progress';
 
 interface ContentModuleWithResources extends ContentModule {
   resources?: ContentResource[];
@@ -30,7 +32,6 @@ import {
   Users,
   Award,
   CheckCircle2,
-  ShoppingCart,
   Star,
   Video,
   Target,
@@ -55,6 +56,7 @@ import {
   Link as LinkIcon,
   Music,
   Download,
+  ShoppingCart,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PriceDisplay } from '@/components/ui/price-display';
@@ -68,6 +70,8 @@ export default function CourseDetailPage() {
   const [modules, setModules] = useState<ContentModuleWithResources[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewResource, setPreviewResource] = useState<any>(null);
+  const [courseProgress, setCourseProgress] = useState<CourseProgress | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(false);
 
   const getResourceIcon = (type: string) => {
     switch (type) {
@@ -122,6 +126,25 @@ export default function CourseDetailPage() {
 
     fetchData();
   }, [contentId]);
+
+  // Fetch progress for purchased courses
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (isPurchased && !checkingPurchase) {
+        setLoadingProgress(true);
+        try {
+          const progress = await learningApi.getCourseProgress(contentId);
+          setCourseProgress(progress);
+        } catch (error) {
+          console.error('Failed to fetch progress:', error);
+        } finally {
+          setLoadingProgress(false);
+        }
+      }
+    };
+
+    fetchProgress();
+  }, [contentId, isPurchased, checkingPurchase]);
 
   const getInitials = (name: string) => {
     return name
@@ -602,13 +625,31 @@ export default function CourseDetailPage() {
                       Checking status...
                     </Button>
                   ) : isPurchased ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
+                      {/* Enrollment Badge */}
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                         <span className="text-sm font-medium text-green-600">
                           You're enrolled in this course
                         </span>
                       </div>
+
+                      {/* Progress Section */}
+                      {courseProgress && courseProgress.progressPercent > 0 && (
+                        <div className="space-y-3 p-4 rounded-xl bg-muted/50 border">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">Your Progress</span>
+                            <span className="text-muted-foreground">{courseProgress.progressPercent}% complete</span>
+                          </div>
+                          <Progress value={courseProgress.progressPercent} className="h-2" />
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{courseProgress.completedModules} of {courseProgress.totalModules} modules</span>
+                            <span>{courseProgress.timeSpentMinutes} min spent</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Primary CTA */}
                       <Button 
                         size="lg" 
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -616,9 +657,32 @@ export default function CourseDetailPage() {
                       >
                         <Link href={`/dashboard`}>
                           <Play className="h-5 w-5 mr-2" />
-                          Continue Learning
+                          {courseProgress && courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Course'}
                         </Link>
                       </Button>
+
+                      {/* Milestone Celebration (if applicable) */}
+                      {courseProgress && courseProgress.progressPercent === 25 && (
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                          <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
+                            🎉 You're 1/4 done! Keep going!
+                          </p>
+                        </div>
+                      )}
+                      {courseProgress && courseProgress.progressPercent === 50 && (
+                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+                          <p className="text-sm font-medium text-blue-700 dark:text-blue-500">
+                            🚀 Halfway there! You're doing great!
+                          </p>
+                        </div>
+                      )}
+                      {courseProgress && courseProgress.progressPercent === 75 && (
+                        <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
+                          <p className="text-sm font-medium text-purple-700 dark:text-purple-500">
+                            💪 Almost done! Just one more push!
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <a 
