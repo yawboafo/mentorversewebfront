@@ -14,7 +14,7 @@ export interface UploadResponse {
 
 export interface UploadOptions {
   folder?: string;
-  resourceType?: 'image' | 'video' | 'raw' | 'auto';
+  type?: 'mentor_profile' | 'mentor_intro_video' | 'course_media' | 'timeline_media';
   transformation?: Record<string, any>;
 }
 
@@ -25,7 +25,7 @@ export const mediaApi = {
    * Upload an image file to Cloudinary
    */
   async uploadImage(file: File, options?: UploadOptions): Promise<UploadResponse> {
-    return this.uploadFile(file, { ...options, resourceType: 'image' });
+    return this.uploadFile(file, { ...options, type: options?.type || 'course_media' });
   },
 
   /**
@@ -33,7 +33,7 @@ export const mediaApi = {
    * Supports: MP4, MOV, AVI, WebM, etc.
    */
   async uploadVideo(file: File, options?: UploadOptions): Promise<UploadResponse> {
-    return this.uploadFile(file, { ...options, resourceType: 'video' });
+    return this.uploadFile(file, { ...options, type: options?.type || 'course_media' });
   },
 
   /**
@@ -41,7 +41,7 @@ export const mediaApi = {
    * Supports: MP3, WAV, OGG, etc.
    */
   async uploadAudio(file: File, options?: UploadOptions): Promise<UploadResponse> {
-    return this.uploadFile(file, { ...options, resourceType: 'video' }); // Cloudinary treats audio as video
+    return this.uploadFile(file, { ...options, type: options?.type || 'course_media' });
   },
 
   /**
@@ -49,7 +49,7 @@ export const mediaApi = {
    * Supports: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, etc.
    */
   async uploadDocument(file: File, options?: UploadOptions): Promise<UploadResponse> {
-    return this.uploadFile(file, { ...options, resourceType: 'raw' });
+    return this.uploadFile(file, { ...options, type: options?.type || 'course_media' });
   },
 
   /**
@@ -59,11 +59,9 @@ export const mediaApi = {
   async uploadFile(file: File, options?: UploadOptions): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
-
-    // Add optional parameters
-    if (options?.folder) formData.append('folder', options.folder);
-    if (options?.resourceType) formData.append('resource_type', options.resourceType);
-    if (options?.transformation) formData.append('transformation', JSON.stringify(options.transformation));
+    
+    // Add required 'type' field for backend
+    formData.append('type', options?.type || 'course_media');
 
     // Note: For file uploads, we need to override the Content-Type header
     // The apiClient automatically sets 'Content-Type': 'application/json'

@@ -12,6 +12,7 @@ import { DraftStep } from '@/components/ai-builder/draft-step';
 import { RefineStep } from '@/components/ai-builder/refine-step';
 import { CourseIdea, ContentDraft } from '@/lib/api/types';
 import { contentApi } from '@/lib/api/content';
+import { modulesApi } from '@/lib/api/modules';
 import { toast } from 'sonner';
 
 type Step = 'ideas' | 'draft' | 'refine';
@@ -78,6 +79,69 @@ export default function AIBuilderPage() {
       const savedContent = await contentApi.createContent(contentPayload);
       console.log('✅ Content saved successfully:', savedContent);
       console.log('📝 Content ID:', savedContent.id, 'Mentor ID:', savedContent.mentorId, 'Status:', savedContent.status);
+      
+      // Save the AI-generated modules and resources
+      if (draft.outline && draft.outline.length > 0) {
+        console.log('📚 Creating modules and resources from AI outline...');
+        console.log('📝 Outline structure:', JSON.stringify(draft.outline, null, 2));
+        toast.info('Adding modules and resources...');
+        
+        for (let i = 0; i < draft.outline.length; i++) {
+          const outlineModule = draft.outline[i];
+          
+          // Create the module (API expects orderIndex, not order)
+          const moduleResponse = await modulesApi.createModule({
+            contentId: savedContent.id,
+            title: outlineModule.title,
+            description: outlineModule.description,
+            orderIndex: i,
+          });
+          
+          // API returns {success, message, module: {...}}
+          const createdModule = (moduleResponse as any).module || moduleResponse;
+          console.log(`✅ Created module ${i + 1}:`, createdModule.title || createdModule.id);
+          
+          // Create resources for this module
+          // Note: AI outline has resources as array of strings
+          if (outlineModule.resources && outlineModule.resources.length > 0) {
+            for (let j = 0; j < outlineModule.resources.length; j++) {
+              const resourceTitle = outlineModule.resources[j];
+              const resourcePayload = {
+                moduleId: createdModule.id,
+                title: typeof resourceTitle === 'string' ? resourceTitle : resourceTitle.title,
+                description: typeof resourceTitle === 'string' ? '' : resourceTitle.description,
+                resourceType: 'document' as const,
+                url: typeof resourceTitle === 'string' ? 'https://example.com/resource' : (resourceTitle.url || 'https://example.com/resource'),
+                orderIndex: j,
+                isPreview: j === 0, // First resource is preview
+              };
+              console.log(`  📝 Creating resource ${j + 1}:`, resourcePayload);
+              await modulesApi.createResource(resourcePayload);
+            }
+            console.log(`  ✅ Added ${outlineModule.resources.length} resources`);
+          }
+          
+          // Create activities as document resources
+          // Note: AI outline has activities as array of strings
+          if (outlineModule.activities && outlineModule.activities.length > 0) {
+            const resourceCount = outlineModule.resources?.length || 0;
+            for (let k = 0; k < outlineModule.activities.length; k++) {
+              const activityTitle = outlineModule.activities[k];
+              await modulesApi.createResource({
+                moduleId: createdModule.id,
+                title: typeof activityTitle === 'string' ? `Activity: ${activityTitle}` : `Activity: ${activityTitle.type}`,
+                description: typeof activityTitle === 'string' ? activityTitle : activityTitle.description,
+                resourceType: 'document',
+                url: 'https://example.com/activity',
+                orderIndex: resourceCount + k,
+                isPreview: false,
+              });
+            }
+            console.log(`  ✅ Added ${outlineModule.activities.length} activities`);
+          }
+        }
+        console.log('✅ All modules and resources created successfully');
+      }
       
       // Automatically publish the AI-generated content
       // Since it's AI-generated and reviewed in the builder, we can publish immediately

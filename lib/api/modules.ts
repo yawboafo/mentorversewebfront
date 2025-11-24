@@ -58,7 +58,7 @@ export interface CreateModuleRequest {
   contentId: string;
   title: string;
   description: string;
-  order?: number;
+  orderIndex: number;
 }
 
 export interface UpdateModuleRequest {
@@ -78,7 +78,7 @@ export interface CreateResourceRequest {
   fileSize?: number;
   mimeType?: string;
   isPreview?: boolean;
-  order?: number;
+  orderIndex: number;
 }
 
 export interface UpdateResourceRequest {
@@ -117,7 +117,8 @@ export const modulesApi = {
    * Create a new module for content
    */
   async createModule(data: CreateModuleRequest): Promise<ContentModule> {
-    return apiClient.post<ContentModule>(`/content/${data.contentId}/modules`, data);
+    const { contentId, ...payload } = data;
+    return apiClient.post<ContentModule>(`/content/${contentId}/modules`, payload);
   },
 
   /**
@@ -171,7 +172,8 @@ export const modulesApi = {
    * Add a resource to a module
    */
   async createResource(data: CreateResourceRequest): Promise<ContentResource> {
-    return apiClient.post<ContentResource>(`/modules/${data.moduleId}/resources`, data);
+    const { moduleId, ...payload } = data;
+    return apiClient.post<ContentResource>(`/modules/${moduleId}/resources`, payload);
   },
 
   /**

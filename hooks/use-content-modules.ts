@@ -41,7 +41,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       setLoading(true);
       setError(null);
       const structure = await modulesApi.getContentStructure(contentId);
-      setModules(structure.modules);
+      setModules(structure.modules || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch structure');
       console.error('Error fetching structure:', err);
@@ -66,7 +66,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         });
         
         // Add to local state
-        setModules(prev => [...prev, { ...module, resources: [] }]);
+        setModules(prev => [...(prev || []), { ...module, resources: [] }]);
         return module;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to create module');
@@ -89,7 +89,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         
         // Update local state
         setModules(prev =>
-          prev.map(m => (m.id === moduleId ? { ...m, ...updated } : m))
+          (prev || []).map(m => (m.id === moduleId ? { ...m, ...updated } : m))
         );
         return updated;
       } catch (err) {
@@ -111,7 +111,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       await modulesApi.deleteModule(moduleId);
       
       // Remove from local state
-      setModules(prev => prev.filter(m => m.id !== moduleId));
+      setModules(prev => (prev || []).filter(m => m.id !== moduleId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete module');
       console.error('Error deleting module:', err);
@@ -132,7 +132,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         
         // Update local state
         setModules(prev => {
-          const updated = [...prev];
+          const updated = [...(prev || [])];
           orders.forEach(({ id, order }) => {
             const module = updated.find(m => m.id === id);
             if (module) module.order = order;
@@ -172,23 +172,28 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
           const { file, title, description, isPreview } = data;
           const resourceType = getResourceTypeFromFile(file);
           
+          // Get current module to determine orderIndex
+          const currentModule = modules?.find(m => m.id === moduleId);
+          const orderIndex = currentModule?.resources?.length || 0;
+          
           // Upload based on resource type
           let upload;
+          const uploadOptions = { type: 'course_media' as const };
           switch (resourceType) {
             case 'video':
-              upload = await mediaApi.uploadVideo(file);
+              upload = await mediaApi.uploadVideo(file, uploadOptions);
               break;
             case 'audio':
-              upload = await mediaApi.uploadAudio(file);
+              upload = await mediaApi.uploadAudio(file, uploadOptions);
               break;
             case 'image':
-              upload = await mediaApi.uploadImage(file);
+              upload = await mediaApi.uploadImage(file, uploadOptions);
               break;
             case 'document':
-              upload = await mediaApi.uploadDocument(file);
+              upload = await mediaApi.uploadDocument(file, uploadOptions);
               break;
             default:
-              upload = await mediaApi.uploadFile(file);
+              upload = await mediaApi.uploadFile(file, uploadOptions);
           }
 
           setUploadProgress(prev => ({
@@ -211,6 +216,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
               format: upload.format,
             },
             isPreview: isPreview ?? false,
+            orderIndex: orderIndex,
           };
         } else {
           resourceData = data;
@@ -229,9 +235,9 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
 
         // Update local state
         setModules(prev =>
-          prev.map(m =>
+          (prev || []).map(m =>
             m.id === moduleId
-              ? { ...m, resources: [...m.resources, resource] }
+              ? { ...m, resources: [...(m.resources || []), resource] }
               : m
           )
         );
@@ -267,7 +273,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         throw err;
       }
     },
-    []
+    [modules]
   );
 
   // Update a resource
@@ -280,9 +286,9 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         
         // Update local state
         setModules(prev =>
-          prev.map(m => ({
+          (prev || []).map(m => ({
             ...m,
-            resources: m.resources.map(r =>
+            resources: (m.resources || []).map(r =>
               r.id === resourceId ? { ...r, ...updated } : r
             ),
           }))
@@ -308,9 +314,9 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       
       // Remove from local state
       setModules(prev =>
-        prev.map(m => ({
+        (prev || []).map(m => ({
           ...m,
-          resources: m.resources.filter(r => r.id !== resourceId),
+          resources: (m.resources || []).filter(r => r.id !== resourceId),
         }))
       );
     } catch (err) {
@@ -332,10 +338,10 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
         
         // Update local state
         setModules(prev =>
-          prev.map(m => {
+          (prev || []).map(m => {
             if (m.id !== moduleId) return m;
             
-            const updated = [...m.resources];
+            const updated = [...(m.resources || [])];
             orders.forEach(({ id, order }) => {
               const resource = updated.find(r => r.id === id);
               if (resource) resource.order = order;
