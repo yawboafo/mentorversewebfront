@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { MenteeDetails } from '@/lib/api/types';
-import { Users, Search, Loader2, GraduationCap, Plus, UserPlus, ShoppingCart, BookOpen } from 'lucide-react';
+import { Users, Search, Loader2, GraduationCap, Plus, UserPlus, ShoppingCart, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MenteeCard } from '@/components/mentor/mentee-card';
 
