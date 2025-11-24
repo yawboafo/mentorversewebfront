@@ -403,7 +403,10 @@ export default function CreateContentPage() {
   };
 
   const handlePublish = async () => {
-    if (!createdContentId) return;
+    if (!createdContentId) {
+      toast.error('Please complete the basic information and save as draft first');
+      return;
+    }
 
     if (modules.length === 0) {
       toast.error('Please add at least one module before publishing');
@@ -416,14 +419,19 @@ export default function CreateContentPage() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await contentApi.updateContent(createdContentId, { status: 'published' });
+      console.log('📤 Publishing content:', createdContentId);
+      await contentApi.publishContent(createdContentId);
       toast.success('Content published! 🎉');
       setTimeout(() => {
-        router.push('/mentor/dashboard');
+        router.push('/mentor/content');
       }, 1500);
     } catch (err: any) {
+      console.error('❌ Publish error:', err);
       toast.error(err.message || 'Failed to publish content');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1269,8 +1277,19 @@ export default function CreateContentPage() {
               Continue to Pricing
             </Button>
           ) : (
-            <Button type="button" onClick={handlePublish}>
-              Publish Content
+            <Button 
+              type="button" 
+              onClick={handlePublish}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                'Publish Content'
+              )}
             </Button>
           )}
         </div>

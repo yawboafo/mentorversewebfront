@@ -77,10 +77,19 @@ export default function AIBuilderPage() {
       console.log('💾 Saving AI-generated content:', contentPayload);
       const savedContent = await contentApi.createContent(contentPayload);
       console.log('✅ Content saved successfully:', savedContent);
-      console.log('📝 Content ID:', savedContent.id, 'Mentor ID:', savedContent.mentorId);
+      console.log('📝 Content ID:', savedContent.id, 'Mentor ID:', savedContent.mentorId, 'Status:', savedContent.status);
       
-      toast.success('Draft saved successfully!');
-      router.push(`/mentor/dashboard`);
+      // Automatically publish the AI-generated content
+      // Since it's AI-generated and reviewed in the builder, we can publish immediately
+      if (savedContent.status === 'draft') {
+        console.log('📤 Publishing content...');
+        await contentApi.publishContent(savedContent.id);
+        toast.success('Content published successfully! 🎉');
+      } else {
+        toast.success('Draft saved successfully!');
+      }
+      
+      router.push(`/mentor/content`);
     } catch (error: any) {
       console.error('Failed to save draft:', error);
       toast.error(error.message || 'Failed to save draft');
