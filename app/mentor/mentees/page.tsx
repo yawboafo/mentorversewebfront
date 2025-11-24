@@ -35,16 +35,20 @@ export default function MenteesPage() {
   const fetchMentees = async () => {
     try {
       setIsLoading(true);
+      setError('');
       const response = await mentorsApi.getMentees({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
         search: searchQuery || undefined,
       });
-      setMentees(response.data);
-      setTotalMentees(response.pagination.total);
-      setTotalPages(response.pagination.total_pages);
+      setMentees(response.data || []);
+      setTotalMentees(response.pagination?.total || 0);
+      setTotalPages(response.pagination?.total_pages || 1);
     } catch (err: any) {
-      setError(err.message || 'Failed to load mentees');
+      console.error('Error fetching mentees:', err);
+      setError(err.message || 'Failed to load mentees. Please try again later.');
+      setMentees([]);
+      setTotalMentees(0);
     } finally {
       setIsLoading(false);
     }
