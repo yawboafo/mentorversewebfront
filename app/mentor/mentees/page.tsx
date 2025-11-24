@@ -101,9 +101,9 @@ export default function MenteesPage() {
             full_name: sub.fullName,
             email: sub.email,
             avatar_url: sub.profilePhoto,
-            account_type: 'student',
-            country: null,
-            bio: null,
+            account_type: sub.accountType || 'individual',
+            country: sub.country || null,
+            bio: sub.bio || null,
           },
           first_connected_at: sub.subscription?.subscribedAt || new Date().toISOString(),
         }));
