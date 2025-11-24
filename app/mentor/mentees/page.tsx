@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { MenteeDetails, MenteesResponse } from '@/lib/api/types';
-import { Users, Search, Loader2, Mail, MapPin, Calendar, BookOpen, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react';
+import { Users, Search, Loader2, Mail, MapPin, Calendar, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 20;
@@ -94,7 +94,7 @@ export default function MenteesPage() {
           <div>
             <h1 className="text-3xl font-bold">My Students</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and track your mentees who have purchased your content
+              View and manage students who have purchased your courses and frameworks
             </p>
           </div>
         </div>
@@ -156,15 +156,26 @@ export default function MenteesPage() {
         <Card className="p-12 text-center">
           <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-2xl font-bold mb-2">No Students Yet</h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             {searchQuery
               ? 'No students found matching your search.'
-              : 'Students will appear here when they purchase your content.'}
+              : 'Students will appear here automatically when they purchase your courses or frameworks. Start by creating and publishing your content!'}
           </p>
           {!searchQuery && (
-            <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600">
-              <Link href="/mentor/content">View Your Content</Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild variant="outline">
+                <Link href="/mentor/content">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  View Your Content
+                </Link>
+              </Button>
+              <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600">
+                <Link href="/mentor/content/create">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Content
+                </Link>
+              </Button>
+            </div>
           )}
         </Card>
       ) : (
