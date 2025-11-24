@@ -686,7 +686,7 @@ export default function CourseDetailPage() {
                         ) : (
                           <>
                             <Play className="h-5 w-5 mr-2" />
-                            {courseProgress && courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Course'}
+                            {courseProgress ? 'Continue Learning' : 'Start Course'}
                           </>
                         )}
                       </Button>
