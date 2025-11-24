@@ -70,22 +70,27 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      // Call checkout API
+      // Initialize Paystack payment
       const checkoutResponse = await contentApi.checkout({
         contentId: content.id,
-        paymentMethod: 'card', // This would come from payment form in production
       });
 
-      // In production, you'd redirect to payment gateway or process payment
-      // For now, we'll simulate success
-      toast.success('Successfully enrolled in the course!');
-      
-      // Redirect to course page
-      router.push(`/content/${contentId}`);
+      // Redirect to Paystack checkout
+      window.location.href = checkoutResponse.checkoutUrl;
     } catch (error: any) {
       console.error('Checkout failed:', error);
-      toast.error(error.message || 'Failed to complete checkout');
-      setError(error.message || 'Failed to complete checkout');
+      
+      // Handle specific error cases
+      if (error.message?.includes('already purchased')) {
+        toast.error('You have already purchased this content');
+        router.push(`/content/${contentId}`);
+      } else if (error.message?.includes('not found')) {
+        toast.error('Course not found');
+        router.push('/content');
+      } else {
+        toast.error(error.message || 'Failed to initialize payment');
+        setError(error.message || 'Failed to initialize payment');
+      }
     } finally {
       setIsProcessing(false);
     }

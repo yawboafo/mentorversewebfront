@@ -380,12 +380,13 @@ export interface Purchase {
 }
 
 export interface CheckoutRequest {
-  content_id: string;
+  contentId: string;
 }
 
 export interface CheckoutResponse {
-  checkout_url: string;
-  session_id?: string;
+  checkoutUrl: string;
+  reference: string;
+  access_code: string;
 }
 
 // AI Chat Types
@@ -485,6 +486,7 @@ export interface ContentDraft {
   tags?: string[];
   tools?: string[];
   price?: number;
+  currency?: string;
 }
 
 // Mentorship Types (v2.2.0)

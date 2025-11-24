@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { contentApi } from '@/lib/api/content';
 import { modulesApi } from '@/lib/api/modules';
 import { aiApi } from '@/lib/api/ai';
+import { SUPPORTED_CURRENCIES } from '@/lib/utils/currency';
 import { useContentModules } from '@/hooks/use-content-modules';
 import type { ResourceType, Content, ContentDraft } from '@/lib/api/types';
 import { toast } from 'sonner';
@@ -102,6 +103,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
     requiredTimePerWeek: initialData?.requiredTimePerWeek || '',
     supportModel: initialData?.supportModel || '',
     price: initialData?.price?.toString() || '',
+    currency: initialData?.currency || 'USD',
     level: initialData?.level || 'intermediate',
     tags: initialData?.tags || [] as string[]
   });
@@ -243,6 +245,32 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
       return;
     }
 
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast.error('Please add a title before polishing');
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error('Please add a description before polishing');
+      return;
+    }
+    if (!formData.targetAudience.trim()) {
+      toast.error('Please add target audience before polishing');
+      return;
+    }
+    if (formData.learningOutcomes.length === 0) {
+      toast.error('Please add at least one learning outcome before polishing');
+      return;
+    }
+    if (formData.deliveryModes.length === 0) {
+      toast.error('Please select at least one delivery mode before polishing');
+      return;
+    }
+    if (!formData.estimatedDuration.trim()) {
+      toast.error('Please add estimated duration before polishing');
+      return;
+    }
+
     setIsPolishing(true);
     try {
       // Create a draft object from current form data
@@ -263,7 +291,10 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
         tags: formData.tags,
         tools: formData.tools,
         price: parseFloat(formData.price) || 0,
+        currency: formData.currency,
       };
+
+      console.log('🔍 Polish AI - Draft being sent:', JSON.stringify(currentDraft, null, 2));
 
       const refined = await aiApi.refineContent({
         content_id: contentId || undefined,
@@ -289,6 +320,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
         requiredTimePerWeek: formData.requiredTimePerWeek,
         supportModel: refined.support_model || formData.supportModel,
         price: refined.price?.toString() || formData.price,
+        currency: refined.currency || formData.currency,
         level: refined.level,
         tags: refined.tags || formData.tags,
       });
@@ -491,7 +523,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
         estimatedDuration: formData.estimatedDuration.trim(),
         level: formData.level,
         price: parseFloat(formData.price) || 0,
-        currency: 'USD',
+        currency: formData.currency,
       };
 
       // Add optional fields only if they have values
@@ -1423,9 +1455,27 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
           {/* Step 4: Pricing & Publish */}
           {currentStep === 4 && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (USD) *</Label>
+                  <Label htmlFor="currency">Currency *</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  >
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_CURRENCIES.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.symbol} {curr.code} - {curr.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price *</Label>
                   <Input
                     id="price"
                     type="number"
@@ -1493,7 +1543,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
                   <p><strong>Learning Outcomes:</strong> {formData.learningOutcomes.length} items</p>
                   <p><strong>Delivery Modes:</strong> {formData.deliveryModes.length} selected</p>
                   <p><strong>Modules:</strong> {modules?.length || 0}</p>
-                  <p><strong>Price:</strong> ${formData.price || '0.00'}</p>
+                  <p><strong>Price:</strong> {SUPPORTED_CURRENCIES.find(c => c.code === formData.currency)?.symbol || '$'}{formData.price || '0.00'} {formData.currency}</p>
                   <p><strong>Status:</strong> {mode === 'edit' ? initialData?.status : 'draft'}</p>
                 </CardContent>
               </Card>
