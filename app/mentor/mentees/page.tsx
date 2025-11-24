@@ -11,20 +11,34 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { MenteeDetails, MenteesResponse } from '@/lib/api/types';
-import { Users, Search, Loader2, Mail, MapPin, Calendar, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus } from 'lucide-react';
+import { Users, Search, Loader2, Mail, MapPin, Calendar, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus, UserPlus, ShoppingCart } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 20;
 
+type FilterType = 'all' | 'purchase' | 'subscription';
+
 export default function MenteesPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
-  const [mentees, setMentees] = useState<MenteeDetails[]>([]);
+  const [allMentees, setAllMentees] = useState<MenteeDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalMentees, setTotalMentees] = useState(0);
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [error, setError] = useState('');
+
+  // Computed filtered mentees based on active tab
+  const mentees = allMentees.filter(m => {
+    if (filterType === 'purchase') return m.relationship_type === 'purchase_based';
+    if (filterType === 'subscription') return m.relationship_type === 'subscription';
+    return true; // 'all'
+  });
+
+  const purchaseCount = allMentees.filter(m => m.relationship_type === 'purchase_based').length;
+  const subscriptionCount = allMentees.filter(m => m.relationship_type === 'subscription').length;
 
   useEffect(() => {
     if (user) {
@@ -41,13 +55,13 @@ export default function MenteesPage() {
         limit: ITEMS_PER_PAGE,
         search: searchQuery || undefined,
       });
-      setMentees(response.data || []);
+      setAllMentees(response.data || []);
       setTotalMentees(response.pagination?.total || 0);
       setTotalPages(response.pagination?.total_pages || 1);
     } catch (err: any) {
       console.error('Error fetching mentees:', err);
       setError(err.message || 'Failed to load mentees. Please try again later.');
-      setMentees([]);
+      setAllMentees([]);
       setTotalMentees(0);
     } finally {
       setIsLoading(false);
@@ -92,25 +106,69 @@ export default function MenteesPage() {
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">My Students</h1>
+            <h1 className="text-3xl font-bold">My Students & Subscribers</h1>
             <p className="text-muted-foreground mt-1">
-              View and manage students who have purchased your courses and frameworks
+              Manage students who purchased your content and your subscribers
             </p>
           </div>
         </div>
 
-        {/* Stats Card */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Users className="h-10 w-10 text-purple-500" />
-              <div>
-                <div className="text-3xl font-bold">{totalMentees}</div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Users className="h-10 w-10 text-purple-500" />
+                <div>
+                  <div className="text-3xl font-bold">{totalMentees}</div>
+                  <p className="text-sm text-muted-foreground">Total Students</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <ShoppingCart className="h-10 w-10 text-green-500" />
+                <div>
+                  <div className="text-3xl font-bold">{purchaseCount}</div>
+                  <p className="text-sm text-muted-foreground">Purchased Content</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <UserPlus className="h-10 w-10 text-blue-500" />
+                <div>
+                  <div className="text-3xl font-bold">{subscriptionCount}</div>
+                  <p className="text-sm text-muted-foreground">Subscribers</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={filterType} onValueChange={(v) => setFilterType(v as FilterType)} className="mb-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all">
+              <Users className="h-4 w-4 mr-2" />
+              All ({totalMentees})
+            </TabsTrigger>
+            <TabsTrigger value="purchase">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Purchases ({purchaseCount})
+            </TabsTrigger>
+            <TabsTrigger value="subscription">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Subscribers ({subscriptionCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Search */}
         <div className="flex gap-2">
@@ -154,13 +212,37 @@ export default function MenteesPage() {
         </Card>
       ) : mentees.length === 0 ? (
         <Card className="p-12 text-center">
-          <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-2xl font-bold mb-2">No Students Yet</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            {searchQuery
-              ? 'No students found matching your search.'
-              : 'Students will appear here automatically when they purchase your courses or frameworks. Start by creating and publishing your content!'}
-          </p>
+          {filterType === 'all' ? (
+            <>
+              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-2xl font-bold mb-2">No Students Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {searchQuery
+                  ? 'No students found matching your search.'
+                  : 'Students will appear here when they purchase your content or subscribe to you. Start by creating and publishing your content!'}
+              </p>
+            </>
+          ) : filterType === 'purchase' ? (
+            <>
+              <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-2xl font-bold mb-2">No Purchases Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {searchQuery
+                  ? 'No students with purchases found matching your search.'
+                  : 'Students who purchase your courses and frameworks will appear here.'}
+              </p>
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-2xl font-bold mb-2">No Subscribers Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {searchQuery
+                  ? 'No subscribers found matching your search.'
+                  : 'Students who subscribe to follow your work will appear here.'}
+              </p>
+            </>
+          )}
           {!searchQuery && (
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild variant="outline">
@@ -214,6 +296,17 @@ export default function MenteesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{mentee.mentee.account_type}</Badge>
+                          {mentee.relationship_type === 'purchase_based' ? (
+                            <Badge variant="default" className="gap-1 bg-green-500">
+                              <ShoppingCart className="h-3 w-3" />
+                              Purchased
+                            </Badge>
+                          ) : mentee.relationship_type === 'subscription' ? (
+                            <Badge variant="default" className="gap-1 bg-blue-500">
+                              <UserPlus className="h-3 w-3" />
+                              Subscriber
+                            </Badge>
+                          ) : null}
                           {getStatusBadge(mentee.status)}
                         </div>
                       </div>
