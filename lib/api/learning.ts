@@ -191,8 +191,8 @@ export const learningApi = {
       return await apiClient.post<CourseProgress>(`/me/learning/courses/${contentId}/start`, {});
     } catch (error: any) {
       // 400 with existingProgress means already started - that's ok
-      if (error.status === 400 && error.existingProgress) {
-        return error.existingProgress;
+      if (error.status === 400 && error.data?.existingProgress) {
+        return error.data.existingProgress;
       }
       console.error('Failed to start course:', error);
       return null;

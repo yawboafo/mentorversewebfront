@@ -9,11 +9,13 @@ export interface ApiError {
 export class ApiException extends Error {
   status: number;
   errors?: Record<string, string[]>;
+  data?: any;
 
-  constructor(message: string, status: number, errors?: Record<string, string[]>) {
+  constructor(message: string, status: number, errors?: Record<string, string[]>, data?: any) {
     super(message);
     this.status = status;
     this.errors = errors;
+    this.data = data;
     this.name = 'ApiException';
   }
 }
@@ -89,7 +91,8 @@ export const apiClient = {
         throw new ApiException(
           data.message || data.detail || 'Request failed',
           response.status,
-          data.errors
+          data.errors,
+          data
         );
       }
 
