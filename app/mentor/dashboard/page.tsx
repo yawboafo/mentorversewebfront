@@ -14,7 +14,7 @@ import { contentApi } from '@/lib/api/content';
 import type { Appointment } from '@/lib/api/appointments';
 import { MentorDashboard } from '@/lib/api/types';
 import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
 import { UpcomingSessions } from '@/components/mentor/upcoming-sessions';
 
