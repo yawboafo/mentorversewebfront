@@ -21,8 +21,13 @@ export function usePurchaseStatus(contentId: string | null) {
         
         setIsPurchased(!!matchingPurchase);
         setPurchase(matchingPurchase || null);
-      } catch (error) {
-        console.error('Failed to check purchase status:', error);
+      } catch (error: any) {
+        // Handle 401 gracefully - user is not logged in, so not purchased
+        if (error?.status === 401) {
+          console.log('User not authenticated - treating as not purchased');
+        } else {
+          console.error('Failed to check purchase status:', error);
+        }
         setIsPurchased(false);
         setPurchase(null);
       } finally {

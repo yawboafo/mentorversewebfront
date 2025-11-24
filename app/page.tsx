@@ -104,7 +104,6 @@ export default function HomePage() {
     <div className="flex flex-col">
       {/* Hero Section - Gen-Z Bold */}
       <section className="relative py-24 md:py-32 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-purple-950/30 dark:via-pink-950/30 dark:to-orange-950/30 overflow-hidden animate-gradient">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5"></div>
         <motion.div 
           className="absolute top-20 right-10 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl"
           animate={{ 

@@ -300,132 +300,6 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
-      {/* ===== LEARNING DASHBOARD (Only show if course started) ===== */}
-      {isPurchased && courseProgress && (
-        <div className="border-b border-border/40 bg-gradient-to-b from-primary/5 to-background">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="space-y-8">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-3xl font-bold text-foreground">Your Learning Dashboard</h2>
-                  <p className="text-muted-foreground mt-1">Track your progress and stay connected with your mentor</p>
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Progress Card */}
-                <Card className="border-2 border-primary/20 bg-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="rounded-lg bg-primary/10 p-2.5">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-2xl font-bold text-primary">{courseProgress.progressPercent}%</span>
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Overall Progress</p>
-                    <Progress value={courseProgress.progressPercent} className="h-2 mt-3" />
-                  </CardContent>
-                </Card>
-
-                {/* Modules Card */}
-                <Card className="border-2 border-accent/20 bg-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="rounded-lg bg-accent/10 p-2.5">
-                        <LayoutList className="h-5 w-5 text-accent" />
-                      </div>
-                      <span className="text-2xl font-bold text-foreground">
-                        {courseProgress.completedModules}/{courseProgress.totalModules}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Modules Completed</p>
-                  </CardContent>
-                </Card>
-
-                {/* Time Spent Card */}
-                <Card className="border-2 border-secondary/20 bg-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="rounded-lg bg-secondary/10 p-2.5">
-                        <Clock className="h-5 w-5 text-secondary" />
-                      </div>
-                      <span className="text-2xl font-bold text-foreground">
-                        {Math.floor(courseProgress.timeSpentMinutes / 60)}h
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Time Learning</p>
-                  </CardContent>
-                </Card>
-
-                {/* Resources Card */}
-                <Card className="border-2 border-blue-500/20 bg-card">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="rounded-lg bg-blue-500/10 p-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <span className="text-2xl font-bold text-foreground">
-                        {courseProgress.completedResources}/{courseProgress.totalResources}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Lessons Done</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Mentor Access Card */}
-              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-6">
-                    {/* Mentor Avatar */}
-                    <Avatar className="h-20 w-20 ring-2 ring-primary/30">
-                      <AvatarImage 
-                        src={content.mentor.avatarUrl || undefined} 
-                        alt={content.mentor.fullName}
-                      />
-                      <AvatarFallback className="bg-primary/20 text-primary text-xl font-semibold">
-                        {getInitials(content.mentor.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {/* Mentor Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-foreground">{content.mentor.fullName}</h3>
-                        <Badge className="bg-primary/10 text-primary border-primary/20">Your Mentor</Badge>
-                      </div>
-                      <p className="text-muted-foreground mb-4">
-                        Need help or have questions? Your mentor is here to support your learning journey.
-                      </p>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-3">
-                        <Button className="bg-primary hover:bg-primary/90">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Start Chat
-                        </Button>
-                        <Button variant="outline" className="border-primary/30 hover:bg-primary/5">
-                          <Video className="h-4 w-4 mr-2" />
-                          Schedule Call
-                        </Button>
-                        <Button variant="ghost" asChild>
-                          <Link href={`/mentors/${content.mentor.id}`}>
-                            View Profile
-                            <ArrowRight className="h-4 w-4 ml-2" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ===== MAIN CONTENT SECTION ===== */}
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -739,7 +613,7 @@ export default function CourseDetailPage() {
             </section>
           </div>
 
-          {/* RIGHT COLUMN: Learning Hub or Enrollment Card */}
+          {/* RIGHT COLUMN: Simple Study Hub or Enrollment Card */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
               {checkingPurchase ? (
@@ -750,56 +624,20 @@ export default function CourseDetailPage() {
                 </Card>
               ) : isPurchased && courseProgress ? (
                 <>
-                  {/* LEARNING HUB - For Enrolled Students */}
+                  {/* SIMPLE STUDY HUB - Clean & Focused */}
                   <Card className="border-2 border-primary/30 shadow-2xl overflow-hidden">
-                    <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
-                    <CardContent className="p-6 space-y-6">
-                      {/* Progress Overview */}
-                      <div>
-                        <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                          Your Progress
-                        </h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Completion</span>
-                            <span className="text-2xl font-bold text-primary">{courseProgress.progressPercent}%</span>
-                          </div>
-                          <Progress value={courseProgress.progressPercent} className="h-3" />
-                          <div className="grid grid-cols-2 gap-3 pt-2">
-                            <div className="text-center p-3 rounded-lg bg-accent/5">
-                              <p className="text-2xl font-bold text-foreground">{courseProgress.completedModules}/{courseProgress.totalModules}</p>
-                              <p className="text-xs text-muted-foreground">Modules</p>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-accent/5">
-                              <p className="text-2xl font-bold text-foreground">{Math.floor(courseProgress.timeSpentMinutes / 60)}h</p>
-                              <p className="text-xs text-muted-foreground">Learning Time</p>
-                            </div>
-                          </div>
+                    <div className="h-2 bg-gradient-to-r from-primary to-accent" />
+                    <CardContent className="p-6 space-y-4">
+                      {/* Progress - Minimal */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">Progress</span>
+                          <span className="text-xl font-bold text-primary">{courseProgress.progressPercent}%</span>
                         </div>
+                        <Progress value={courseProgress.progressPercent} className="h-2" />
                       </div>
 
                       <Separator />
-
-                      {/* Primary Action */}
-                      <Button 
-                        size="lg" 
-                        className="w-full bg-primary hover:bg-primary/90 h-14 text-base font-semibold shadow-lg"
-                        onClick={handleStartCourse}
-                        disabled={startingCourse}
-                      >
-                        {startingCourse ? (
-                          <>
-                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-5 w-5 mr-2" />
-                            {courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
-                          </>
-                        )}
-                      </Button>
 
                       {/* Milestone */}
                       {courseProgress.progressPercent === 25 && (
@@ -817,58 +655,13 @@ export default function CourseDetailPage() {
                           <p className="text-sm font-medium text-purple-700">💪 Almost Done!</p>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
 
-                  {/* MENTOR SUPPORT CARD */}
-                  <Card className="border-2 border-accent/30 shadow-xl">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="h-12 w-12 ring-2 ring-accent/30">
-                          <AvatarImage src={content.mentor.avatarUrl || undefined} alt={content.mentor.fullName} />
-                          <AvatarFallback className="bg-accent/20 text-accent font-semibold">
-                            {getInitials(content.mentor.fullName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Your Mentor</p>
-                          <p className="font-bold text-foreground">{content.mentor.fullName}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                          <Link href={`/messages?mentor=${content.mentor.id}`}>
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Send Message
-                          </Link>
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full justify-start" asChild>
-                          <Link href={`/schedule?mentor=${content.mentor.id}`}>
-                            <Video className="h-4 w-4 mr-2" />
-                            Book a Call
-                          </Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* RESOURCES CARD */}
-                  <Card className="border-2 border-secondary/30">
-                    <CardContent className="p-6 space-y-3">
-                      <h4 className="font-bold text-foreground text-sm mb-3">Course Resources</h4>
-                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                        <Link href={`/dashboard`}>
-                          <BarChart3 className="h-4 w-4 mr-2" />
-                          View All My Courses
+                      {/* Single Help Link */}
+                      <Button variant="ghost" size="sm" className="w-full justify-center text-muted-foreground hover:text-foreground" asChild>
+                        <Link href={`/messages?mentor=${content.mentor.id}`}>
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Get Help from Mentor
                         </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Materials
-                      </Button>
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
-                        <Award className="h-4 w-4 mr-2" />
-                        Get Certificate
                       </Button>
                     </CardContent>
                   </Card>

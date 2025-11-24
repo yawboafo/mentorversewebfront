@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://checkout.paystack.com",
               "connect-src 'self' https://checkout.paystack.com https://api.paystack.co https://mentorverseapi-production.up.railway.app",
-              "frame-src 'self' https://checkout.paystack.com",
+              "frame-src 'self' https://checkout.paystack.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
