@@ -52,9 +52,12 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       console.log('📦 Modules in structure:', structure.modules);
       
       setModules(structure.modules || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch structure');
-      console.error('❌ Error fetching structure:', err);
+    } catch (err: any) {
+      // Suppress 403 errors for unpublished content - this is expected during creation
+      if (err.status !== 403) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch structure');
+        console.error('❌ Error fetching structure:', err);
+      }
     } finally {
       setLoading(false);
     }

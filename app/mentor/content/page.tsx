@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { contentApi } from '@/lib/api/content';
 import { Content } from '@/lib/api/types';
+import { formatCurrency } from '@/lib/utils/currency';
 import { 
   BookOpen, 
   Plus, 
@@ -261,7 +262,7 @@ export default function MentorContentPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Price:</span>
-                        <span className="font-semibold">${content.price}</span>
+                        <span className="font-semibold">{formatCurrency(content.price, content.currency || 'USD')}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Level:</span>

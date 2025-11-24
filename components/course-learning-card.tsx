@@ -69,8 +69,8 @@ export function CourseLearningCard({ content, priority = false }: CourseLearning
               <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full">
                 <span className="font-bold text-sm">
                   {formatCurrency(
-                    content.display_price || content.price,
-                    content.display_currency || content.currency || 'USD'
+                    content.price,
+                    content.currency || 'USD'
                   )}
                 </span>
               </div>

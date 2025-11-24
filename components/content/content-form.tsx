@@ -523,7 +523,9 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
         estimatedDuration: formData.estimatedDuration.trim(),
         level: formData.level,
         price: parseFloat(formData.price) || 0,
-        currency: formData.currency,
+        currency: formData.currency, // Required by backend
+        tools: [], // Required field - initialize as empty array
+        tags: [], // Required field - initialize as empty array
       };
 
       // Add optional fields only if they have values
@@ -539,6 +541,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
         contentData.location = formData.location.trim();
       }
 
+      // Update tools and tags if provided
       if (formData.tools.length > 0) {
         contentData.tools = formData.tools.filter(t => t.trim());
       }
@@ -548,7 +551,11 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
       }
 
       if (formData.requiredTimePerWeek?.trim()) {
-        contentData.requiredTimePerWeek = formData.requiredTimePerWeek.trim();
+        // Backend expects a number (hours per week)
+        const timeMatch = formData.requiredTimePerWeek.match(/\d+/);
+        if (timeMatch) {
+          contentData.requiredTimePerWeek = parseInt(timeMatch[0]);
+        }
       }
 
       if (formData.supportModel?.trim()) {
@@ -572,7 +579,23 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
       return true;
     } catch (err: any) {
       console.error('Save error:', err);
-      toast.error(err.message || 'Failed to save content');
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      console.error('Full error data:', err.data);
+      
+      // Log Zod validation errors if available
+      if (err.data?.errors) {
+        console.error('Validation errors:', err.data.errors);
+      }
+      
+      // Show more detailed error message if available
+      if (err.data?.message) {
+        toast.error(err.data.message);
+      } else if (err.data?.errors && Array.isArray(err.data.errors)) {
+        const firstError = err.data.errors[0];
+        toast.error(`Validation error: ${firstError.path?.join('.') || 'unknown field'} - ${firstError.message}`);
+      } else {
+        toast.error(err.message || 'Failed to save content');
+      }
       return false;
     } finally {
       setIsLoading(false);
@@ -621,19 +644,40 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
       return;
     }
 
-    if (!modules || modules.length === 0) {
-      toast.error('Please add at least one module before publishing');
-      return;
-    }
-
-    const hasResources = modules.some(m => m.resources && m.resources.length > 0);
-    if (!hasResources) {
-      toast.error('Please add resources to your modules before publishing');
-      return;
-    }
-
     setIsLoading(true);
+    
     try {
+      // Fetch latest modules directly from backend to validate
+      console.log('🔍 Checking modules before publish...');
+      const response = await modulesApi.getModules(contentId);
+      
+      // Handle wrapped response
+      const contentModules = Array.isArray(response) ? response : (response as any)?.data || [];
+      console.log('📦 Modules found:', contentModules);
+      
+      if (!contentModules || contentModules.length === 0) {
+        toast.error('Please add at least one module before publishing');
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if any module has resources
+      let hasResources = false;
+      for (const module of contentModules) {
+        const resourcesResponse = await modulesApi.getResources(module.id);
+        const resources = Array.isArray(resourcesResponse) ? resourcesResponse : (resourcesResponse as any)?.data || [];
+        if (resources && resources.length > 0) {
+          hasResources = true;
+          break;
+        }
+      }
+
+      if (!hasResources) {
+        toast.error('Please add resources to your modules before publishing');
+        setIsLoading(false);
+        return;
+      }
+
       await contentApi.publishContent(contentId);
       toast.success('Content published! 🎉');
       if (onSuccess) {
