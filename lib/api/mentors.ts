@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Mentor, MentorApplication, MentorDashboard, MenteesResponse, UserMentorsResponse, SubscriptionStatus } from './types';
+import type { Mentor, MentorApplication, MentorDashboard, MenteesResponse, UserMentorsResponse, SubscriptionStatus, MenteeDetails } from './types';
 
 export interface MentorsQuery {
   q?: string;
