@@ -164,7 +164,7 @@ export function ContinueLearning() {
                 <Button asChild className="w-full" size="lg">
                   <Link href={`/content/${course.contentId}`}>
                     <Play className="mr-2 h-4 w-4" />
-                    {course.progress.percent === 0 ? 'Start Course' : 'Continue Learning'}
+                    Continue Learning
                   </Link>
                 </Button>
               </div>
