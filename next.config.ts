@@ -12,6 +12,31 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.paystack.com https://js.paystack.co",
+              "style-src 'self' 'unsafe-inline' https://checkout.paystack.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' data: https://checkout.paystack.com",
+              "connect-src 'self' https://checkout.paystack.com https://api.paystack.co https://mentorverseapi-production.up.railway.app",
+              "frame-src 'self' https://checkout.paystack.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
