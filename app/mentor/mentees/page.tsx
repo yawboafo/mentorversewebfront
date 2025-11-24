@@ -29,6 +29,8 @@ export default function MenteesPage() {
   const [totalMentees, setTotalMentees] = useState(0);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [error, setError] = useState('');
+  const [purchaseCount, setPurchaseCount] = useState(0);
+  const [subscriptionCount, setSubscriptionCount] = useState(0);
 
   // Computed filtered mentees based on active tab
   const mentees = allMentees.filter(m => {
@@ -37,14 +39,29 @@ export default function MenteesPage() {
     return true; // 'all'
   });
 
-  const purchaseCount = allMentees.filter(m => m.relationship_type === 'purchase_based').length;
-  const subscriptionCount = allMentees.filter(m => m.relationship_type === 'subscription').length;
-
   useEffect(() => {
     if (user) {
       fetchMentees();
+      fetchAllMenteesForCounts();
     }
   }, [user, currentPage]);
+
+  const fetchAllMenteesForCounts = async () => {
+    try {
+      // Fetch all mentees without pagination to get accurate counts
+      const response = await mentorsApi.getMentees({
+        limit: 1000, // Large limit to get all mentees
+      });
+      const allData = response.data || [];
+      const purchases = allData.filter(m => m.relationship_type === 'purchase_based').length;
+      const subscriptions = allData.filter(m => m.relationship_type === 'subscription').length;
+      setPurchaseCount(purchases);
+      setSubscriptionCount(subscriptions);
+      console.log('📊 Counts - Purchases:', purchases, 'Subscriptions:', subscriptions);
+    } catch (err: any) {
+      console.error('Error fetching counts:', err);
+    }
+  };
 
   const fetchMentees = async () => {
     try {
