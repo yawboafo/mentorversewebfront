@@ -64,6 +64,9 @@ export default function CourseDetailPage() {
   const [content, setContent] = useState<Content | null>(null);
   const [modules, setModules] = useState<ContentModuleWithResources[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrolledAt, setEnrolledAt] = useState<string | undefined>();
+  const [checkingEnrollment, setCheckingEnrollment] = useState(true);
   const [previewResource, setPreviewResource] = useState<any>(null);
 
   const getResourceIcon = (type: string) => {
@@ -101,19 +104,25 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contentData, structureData] = await Promise.all([
+        const [contentData, structureData, enrollmentStatus] = await Promise.all([
           contentApi.getContentById(contentId),
-          modulesApi.getContentStructure(contentId).catch(() => ({ data: { modules: [] } }))
+          modulesApi.getContentStructure(contentId).catch(() => ({ data: { modules: [] } })),
+          contentApi.getEnrollmentStatus(contentId).catch(() => ({ isEnrolled: false }))
         ]);
         
         setContent(contentData);
         // Handle wrapped response
         const structure = (structureData as any).data || structureData;
         setModules(structure.modules || []);
+        
+        // Set enrollment status
+        setIsEnrolled(enrollmentStatus.isEnrolled);
+        setEnrolledAt(enrollmentStatus.enrolledAt);
       } catch (error) {
         console.error('Failed to fetch content:', error);
       } finally {
         setIsLoading(false);
+        setCheckingEnrollment(false);
       }
     };
 
@@ -588,14 +597,47 @@ export default function CourseDetailPage() {
 
                   <Separator />
 
-                  {/* Primary CTA */}
-                  <Button 
-                    size="lg" 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                  >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Enroll Now
-                  </Button>
+                  {/* Primary CTA - Dynamic based on enrollment */}
+                  {checkingEnrollment ? (
+                    <Button 
+                      size="lg" 
+                      className="w-full h-14 rounded-xl"
+                      disabled
+                    >
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Checking status...
+                    </Button>
+                  ) : isEnrolled ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-green-600">
+                          You're enrolled in this course
+                        </span>
+                      </div>
+                      <Button 
+                        size="lg" 
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                        asChild
+                      >
+                        <Link href={`/dashboard`}>
+                          <Play className="h-5 w-5 mr-2" />
+                          Continue Learning
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                      asChild
+                    >
+                      <Link href={`/content/${contentId}/checkout`}>
+                        <ShoppingCart className="h-5 w-5 mr-2" />
+                        Enroll Now
+                      </Link>
+                    </Button>
+                  )}
 
                   {/* Secondary CTA */}
                   <Button 
