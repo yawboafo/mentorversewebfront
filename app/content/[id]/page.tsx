@@ -739,176 +739,231 @@ export default function CourseDetailPage() {
             </section>
           </div>
 
-          {/* RIGHT COLUMN: Sticky Enrollment Card */}
+          {/* RIGHT COLUMN: Learning Hub or Enrollment Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              <Card className="border-2 border-primary/30 shadow-2xl overflow-hidden">
-                {/* Accent Bar */}
-                <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
-                
-                <CardContent className="p-8 space-y-6">
-                  {/* Price */}
-                  <div className="text-center py-6">
-                    <p className="text-xs text-muted-foreground font-semibold mb-4 uppercase tracking-widest">Investment</p>
-                    <div className="flex items-center justify-center mb-3">
-                      <PriceDisplay
-                        price={content.display_price || content.price}
-                        currency={content.display_currency || content.currency || 'USD'}
-                        className="text-5xl font-bold text-foreground"
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">One-time payment</p>
-                  </div>
-
-                  <Separator />
-
-                  {/* Primary CTA - Dynamic based on enrollment */}
-                  {checkingPurchase ? (
-                    <Button 
-                      size="lg" 
-                      className="w-full h-14 rounded-xl"
-                      disabled
-                    >
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Checking status...
-                    </Button>
-                  ) : isPurchased ? (
-                    <div className="space-y-4">
-                      {/* Enrollment Badge */}
-                      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                        <span className="text-sm font-medium text-green-600">
-                          You're enrolled in this course
-                        </span>
-                      </div>
-
-                      {/* Progress Section */}
-                      {courseProgress && courseProgress.progressPercent > 0 && (
-                        <div className="space-y-3 p-4 rounded-xl bg-muted/50 border">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">Your Progress</span>
-                            <span className="text-muted-foreground">{courseProgress.progressPercent}% complete</span>
+            <div className="sticky top-8 space-y-6">
+              {checkingPurchase ? (
+                <Card className="border-2 border-primary/30 shadow-2xl">
+                  <CardContent className="p-8 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </CardContent>
+                </Card>
+              ) : isPurchased && courseProgress ? (
+                <>
+                  {/* LEARNING HUB - For Enrolled Students */}
+                  <Card className="border-2 border-primary/30 shadow-2xl overflow-hidden">
+                    <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
+                    <CardContent className="p-6 space-y-6">
+                      {/* Progress Overview */}
+                      <div>
+                        <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          Your Progress
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Completion</span>
+                            <span className="text-2xl font-bold text-primary">{courseProgress.progressPercent}%</span>
                           </div>
-                          <Progress value={courseProgress.progressPercent} className="h-2" />
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{courseProgress.completedModules} of {courseProgress.totalModules} modules</span>
-                            <span>{courseProgress.timeSpentMinutes} min spent</span>
+                          <Progress value={courseProgress.progressPercent} className="h-3" />
+                          <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="text-center p-3 rounded-lg bg-accent/5">
+                              <p className="text-2xl font-bold text-foreground">{courseProgress.completedModules}/{courseProgress.totalModules}</p>
+                              <p className="text-xs text-muted-foreground">Modules</p>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-accent/5">
+                              <p className="text-2xl font-bold text-foreground">{Math.floor(courseProgress.timeSpentMinutes / 60)}h</p>
+                              <p className="text-xs text-muted-foreground">Learning Time</p>
+                            </div>
                           </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Primary CTA */}
+                      <Separator />
+
+                      {/* Primary Action */}
                       <Button 
                         size="lg" 
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold h-14 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                        className="w-full bg-primary hover:bg-primary/90 h-14 text-base font-semibold shadow-lg"
                         onClick={handleStartCourse}
-                        disabled={startingCourse || loadingProgress}
+                        disabled={startingCourse}
                       >
                         {startingCourse ? (
                           <>
                             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                            Starting course...
+                            Loading...
                           </>
                         ) : (
                           <>
                             <Play className="h-5 w-5 mr-2" />
-                            {courseProgress ? 'Continue Learning' : 'Start Course'}
+                            {courseProgress.progressPercent > 0 ? 'Continue Learning' : 'Start Learning'}
                           </>
                         )}
                       </Button>
 
-                      {/* Milestone Celebration (if applicable) */}
-                      {courseProgress && courseProgress.progressPercent === 25 && (
-                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                          <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-                            🎉 You're 1/4 done! Keep going!
-                          </p>
+                      {/* Milestone */}
+                      {courseProgress.progressPercent === 25 && (
+                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                          <p className="text-sm font-medium text-amber-700">🎉 25% Complete!</p>
                         </div>
                       )}
-                      {courseProgress && courseProgress.progressPercent === 50 && (
-                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
-                          <p className="text-sm font-medium text-blue-700 dark:text-blue-500">
-                            🚀 Halfway there! You're doing great!
-                          </p>
+                      {courseProgress.progressPercent === 50 && (
+                        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                          <p className="text-sm font-medium text-blue-700">🚀 Halfway There!</p>
                         </div>
                       )}
-                      {courseProgress && courseProgress.progressPercent === 75 && (
-                        <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                          <p className="text-sm font-medium text-purple-700 dark:text-purple-500">
-                            💪 Almost done! Just one more push!
-                          </p>
+                      {courseProgress.progressPercent === 75 && (
+                        <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+                          <p className="text-sm font-medium text-purple-700">💪 Almost Done!</p>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <a 
-                      href={`/content/${contentId}/checkout`}
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-14 px-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
-                    >
-                      <ShoppingCart className="h-5 w-5 mr-2" />
-                      Enroll Now
-                    </a>
-                  )}
+                    </CardContent>
+                  </Card>
 
-                  {/* Secondary CTA */}
-                  <Link 
-                    href={`/mentors/${content.mentor.id}`}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-12 px-6 w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <UserCheck className="h-5 w-5 mr-2" />
-                    View Mentor Profile
-                  </Link>
+                  {/* MENTOR SUPPORT CARD */}
+                  <Card className="border-2 border-accent/30 shadow-xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Avatar className="h-12 w-12 ring-2 ring-accent/30">
+                          <AvatarImage src={content.mentor.avatarUrl || undefined} alt={content.mentor.fullName} />
+                          <AvatarFallback className="bg-accent/20 text-accent font-semibold">
+                            {getInitials(content.mentor.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Your Mentor</p>
+                          <p className="font-bold text-foreground">{content.mentor.fullName}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+                          <Link href={`/messages?mentor=${content.mentor.id}`}>
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Send Message
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full justify-start" asChild>
+                          <Link href={`/schedule?mentor=${content.mentor.id}`}>
+                            <Video className="h-4 w-4 mr-2" />
+                            Book a Call
+                          </Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  <Separator />
+                  {/* RESOURCES CARD */}
+                  <Card className="border-2 border-secondary/30">
+                    <CardContent className="p-6 space-y-3">
+                      <h4 className="font-bold text-foreground text-sm mb-3">Course Resources</h4>
+                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                        <Link href={`/dashboard`}>
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          View All My Courses
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Materials
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <Award className="h-4 w-4 mr-2" />
+                        Get Certificate
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <>
+                  {/* ENROLLMENT CARD - For Non-Enrolled Visitors */}
+                  <Card className="border-2 border-primary/30 shadow-2xl overflow-hidden">
+                    <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
+                    <CardContent className="p-8 space-y-6">
+                      {/* Price */}
+                      <div className="text-center py-6">
+                        <p className="text-xs text-muted-foreground font-semibold mb-4 uppercase tracking-widest">Investment</p>
+                        <div className="flex items-center justify-center mb-3">
+                          <PriceDisplay
+                            price={content.display_price || content.price}
+                            currency={content.display_currency || content.currency || 'USD'}
+                            className="text-5xl font-bold text-foreground"
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground">One-time payment</p>
+                      </div>
 
-                  {/* What's Included */}
-                  <div className="space-y-4">
-                    <p className="font-bold text-foreground">What's Included:</p>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                          <CheckCircle2 className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Lifetime access to materials</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                          <CheckCircle2 className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Certificate of completion</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                          <CheckCircle2 className="h-4 w-4 text-primary" />
-                        </div>
-                        <span>Direct mentor support</span>
-                      </div>
-                      {content.deliveryModes?.includes('self_paced') && (
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
+                      <Separator />
+
+                      {/* Enroll Button */}
+                      <a 
+                        href={`/content/${contentId}/checkout`}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-14 px-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+                      >
+                        <ShoppingCart className="h-5 w-5 mr-2" />
+                        Enroll Now
+                      </a>
+
+                      {/* Mentor Profile Link */}
+                      <Link 
+                        href={`/mentors/${content.mentor.id}`}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-base font-semibold h-12 px-6 w-full border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <UserCheck className="h-5 w-5 mr-2" />
+                        View Mentor Profile
+                      </Link>
+
+                      <Separator />
+
+                      {/* What's Included */}
+                      <div className="space-y-4">
+                        <p className="font-bold text-foreground">What's Included:</p>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                            </div>
+                            <span>Lifetime access to materials</span>
                           </div>
-                          <span>Learn at your own pace</span>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                            </div>
+                            <span>Certificate of completion</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                            </div>
+                            <span>Direct mentor support</span>
+                          </div>
+                          {content.deliveryModes?.includes('self_paced') && (
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                                <CheckCircle2 className="h-4 w-4 text-primary" />
+                              </div>
+                              <span>Learn at your own pace</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
 
-                  <Separator />
+                      <Separator />
 
-                  {/* Trust Badges */}
-                  <div className="space-y-3 text-center text-sm text-muted-foreground">
-                    <div className="flex items-center justify-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <span>30-day money-back guarantee</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Lock className="h-4 w-4 text-primary" />
-                      <span>Secure payment</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                      {/* Trust Badges */}
+                      <div className="space-y-3 text-center text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2">
+                          <Shield className="h-4 w-4 text-primary" />
+                          <span>30-day money-back guarantee</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <Lock className="h-4 w-4 text-primary" />
+                          <span>Secure payment</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         </div>
