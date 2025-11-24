@@ -300,6 +300,132 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
+      {/* ===== LEARNING DASHBOARD (Only show if course started) ===== */}
+      {isPurchased && courseProgress && (
+        <div className="border-b border-border/40 bg-gradient-to-b from-primary/5 to-background">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="space-y-8">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground">Your Learning Dashboard</h2>
+                  <p className="text-muted-foreground mt-1">Track your progress and stay connected with your mentor</p>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Progress Card */}
+                <Card className="border-2 border-primary/20 bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="rounded-lg bg-primary/10 p-2.5">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-2xl font-bold text-primary">{courseProgress.progressPercent}%</span>
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Overall Progress</p>
+                    <Progress value={courseProgress.progressPercent} className="h-2 mt-3" />
+                  </CardContent>
+                </Card>
+
+                {/* Modules Card */}
+                <Card className="border-2 border-accent/20 bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="rounded-lg bg-accent/10 p-2.5">
+                        <LayoutList className="h-5 w-5 text-accent" />
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">
+                        {courseProgress.completedModules}/{courseProgress.totalModules}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Modules Completed</p>
+                  </CardContent>
+                </Card>
+
+                {/* Time Spent Card */}
+                <Card className="border-2 border-secondary/20 bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="rounded-lg bg-secondary/10 p-2.5">
+                        <Clock className="h-5 w-5 text-secondary" />
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">
+                        {Math.floor(courseProgress.timeSpentMinutes / 60)}h
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Time Learning</p>
+                  </CardContent>
+                </Card>
+
+                {/* Resources Card */}
+                <Card className="border-2 border-blue-500/20 bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="rounded-lg bg-blue-500/10 p-2.5">
+                        <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">
+                        {courseProgress.completedResources}/{courseProgress.totalResources}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Lessons Done</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Mentor Access Card */}
+              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-6">
+                    {/* Mentor Avatar */}
+                    <Avatar className="h-20 w-20 ring-2 ring-primary/30">
+                      <AvatarImage 
+                        src={content.mentor.avatarUrl || undefined} 
+                        alt={content.mentor.fullName}
+                      />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xl font-semibold">
+                        {getInitials(content.mentor.fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Mentor Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-bold text-foreground">{content.mentor.fullName}</h3>
+                        <Badge className="bg-primary/10 text-primary border-primary/20">Your Mentor</Badge>
+                      </div>
+                      <p className="text-muted-foreground mb-4">
+                        Need help or have questions? Your mentor is here to support your learning journey.
+                      </p>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3">
+                        <Button className="bg-primary hover:bg-primary/90">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Start Chat
+                        </Button>
+                        <Button variant="outline" className="border-primary/30 hover:bg-primary/5">
+                          <Video className="h-4 w-4 mr-2" />
+                          Schedule Call
+                        </Button>
+                        <Button variant="ghost" asChild>
+                          <Link href={`/mentors/${content.mentor.id}`}>
+                            View Profile
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== MAIN CONTENT SECTION ===== */}
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
