@@ -16,7 +16,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { contentApi } from '@/lib/api/content';
-import { Content } from '@/lib/api/types';
+import { modulesApi } from '@/lib/api/modules';
+import { Content, ContentModule } from '@/lib/api/types';
 import {
   BookOpen,
   Clock,
@@ -41,6 +42,13 @@ import {
   MessageCircle,
   LayoutList,
   FileText,
+  Eye,
+  X,
+  Image as ImageIcon,
+  File,
+  Link as LinkIcon,
+  Music,
+  Download,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { PriceDisplay } from '@/components/ui/price-display';
@@ -50,13 +58,54 @@ export default function CourseDetailPage() {
   const contentId = params.id as string;
   
   const [content, setContent] = useState<Content | null>(null);
+  const [modules, setModules] = useState<ContentModule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewResource, setPreviewResource] = useState<any>(null);
+
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4 text-primary" />;
+      case 'image':
+        return <ImageIcon className="h-4 w-4 text-accent" />;
+      case 'document':
+        return <FileText className="h-4 w-4 text-secondary" />;
+      case 'link':
+        return <LinkIcon className="h-4 w-4 text-blue-500" />;
+      case 'audio':
+        return <Music className="h-4 w-4 text-purple-500" />;
+      case 'file':
+        return <File className="h-4 w-4 text-gray-500" />;
+      default:
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    const mb = bytes / (1024 * 1024);
+    return mb < 1 ? `${(bytes / 1024).toFixed(0)} KB` : `${mb.toFixed(1)} MB`;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await contentApi.getContentById(contentId);
-        setContent(data);
+        const [contentData, structureData] = await Promise.all([
+          contentApi.getContentById(contentId),
+          modulesApi.getContentStructure(contentId).catch(() => ({ data: { modules: [] } }))
+        ]);
+        
+        setContent(contentData);
+        // Handle wrapped response
+        const structure = (structureData as any).data || structureData;
+        setModules(structure.modules || []);
       } catch (error) {
         console.error('Failed to fetch content:', error);
       } finally {
@@ -249,7 +298,7 @@ export default function CourseDetailPage() {
                   </Card>
                 </motion.div>
 
-                {content.outline && content.outline.length > 0 && (
+                {modules && modules.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -263,7 +312,7 @@ export default function CourseDetailPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Modules</p>
-                          <p className="text-lg font-bold text-foreground mt-1">{content.outline.length}</p>
+                          <p className="text-lg font-bold text-foreground mt-1">{modules.length}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -346,7 +395,7 @@ export default function CourseDetailPage() {
             </section>
 
             {/* MODULE BREAKDOWN - Premium Accordion */}
-            {content.outline && content.outline.length > 0 && (
+            {modules && modules.length > 0 && (
               <section>
                 <h2 className="text-3xl font-bold mb-8 text-foreground flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary/10">
@@ -357,9 +406,9 @@ export default function CourseDetailPage() {
                 <Card className="border border-border/50 shadow-soft-lg overflow-hidden">
                   <CardContent className="p-0">
                     <Accordion type="single" collapsible className="w-full">
-                      {content.outline.map((module, index) => (
+                      {modules.map((module, index) => (
                         <AccordionItem 
-                          key={index} 
+                          key={module.id} 
                           value={`module-${index}`}
                           className="border-b border-border/50 last:border-0"
                         >
@@ -368,9 +417,16 @@ export default function CourseDetailPage() {
                               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary font-bold flex-shrink-0">
                                 {index + 1}
                               </div>
-                              <span className="font-semibold text-lg text-foreground">
-                                {module.title || `Module ${index + 1}`}
-                              </span>
+                              <div className="flex-1">
+                                <span className="font-semibold text-lg text-foreground">
+                                  {module.title || `Module ${index + 1}`}
+                                </span>
+                                {module.resources && module.resources.length > 0 && (
+                                  <Badge variant="secondary" className="ml-3">
+                                    {module.resources.length} {module.resources.length === 1 ? 'resource' : 'resources'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="px-8 pb-8 pt-4">
@@ -381,28 +437,61 @@ export default function CourseDetailPage() {
                                 </p>
                               )}
                               
-                              {module.activities && module.activities.length > 0 && (
-                                <div>
-                                  <p className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">Learning Activities</p>
-                                  <ul className="space-y-2">
-                                    {module.activities.map((activity: any, actIdx: number) => (
-                                      <li key={actIdx} className="flex items-start gap-3 text-muted-foreground">
-                                        <Play className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                                        <span>{activity}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
                               {module.resources && module.resources.length > 0 && (
                                 <div>
-                                  <p className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">Resources Included</p>
-                                  <ul className="space-y-2">
-                                    {module.resources.map((resource: any, resIdx: number) => (
-                                      <li key={resIdx} className="flex items-start gap-3 text-muted-foreground">
-                                        <FileText className="h-4 w-4 text-accent mt-1 flex-shrink-0" />
-                                        <span>{resource}</span>
+                                  <p className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">Resources</p>
+                                  <ul className="space-y-3">
+                                    {module.resources.map((resource) => (
+                                      <li key={resource.id} className="flex items-center justify-between gap-4 p-3 rounded-lg bg-accent/5 hover:bg-accent/10 transition-colors">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                          <div className="flex-shrink-0">
+                                            {getResourceIcon(resource.resourceType)}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-foreground truncate">
+                                              {resource.title}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                              <span className="capitalize">{resource.resourceType}</span>
+                                              {resource.duration && (
+                                                <>
+                                                  <span>•</span>
+                                                  <span>{formatDuration(resource.duration)}</span>
+                                                </>
+                                              )}
+                                              {resource.fileSize && (
+                                                <>
+                                                  <span>•</span>
+                                                  <span>{formatFileSize(resource.fileSize)}</span>
+                                                </>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          {resource.isPreview ? (
+                                            <>
+                                              <Badge variant="default" className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20">
+                                                <Eye className="h-3 w-3 mr-1" />
+                                                Free Preview
+                                              </Badge>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setPreviewResource(resource)}
+                                                className="gap-2"
+                                              >
+                                                <Eye className="h-4 w-4" />
+                                                Preview
+                                              </Button>
+                                            </>
+                                          ) : (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                              <Lock className="h-4 w-4" />
+                                              <span className="text-sm">Locked</span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </li>
                                     ))}
                                   </ul>
@@ -571,6 +660,137 @@ export default function CourseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* RESOURCE PREVIEW MODAL */}
+      {previewResource && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setPreviewResource(null)}
+        >
+          <div 
+            className="bg-background rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-foreground truncate">
+                  {previewResource.title}
+                </h3>
+                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                  <Badge variant="outline" className="capitalize">
+                    {previewResource.resourceType}
+                  </Badge>
+                  {previewResource.duration && (
+                    <span>{formatDuration(previewResource.duration)}</span>
+                  )}
+                  {previewResource.fileSize && (
+                    <span>{formatFileSize(previewResource.fileSize)}</span>
+                  )}
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                    Free Preview
+                  </Badge>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPreviewResource(null)}
+                className="flex-shrink-0 ml-4"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-6">
+              {previewResource.resourceType === 'video' && previewResource.url && (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    src={previewResource.url}
+                    controls
+                    controlsList="nodownload"
+                    className="w-full h-full"
+                    autoPlay
+                  >
+                    Your browser does not support video playback.
+                  </video>
+                </div>
+              )}
+
+              {previewResource.resourceType === 'image' && previewResource.url && (
+                <div className="flex items-center justify-center bg-muted/50 rounded-lg min-h-[400px]">
+                  <img
+                    src={previewResource.url}
+                    alt={previewResource.title}
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  />
+                </div>
+              )}
+
+              {previewResource.resourceType === 'document' && previewResource.url && (
+                <div className="h-[600px] bg-muted/50 rounded-lg overflow-hidden">
+                  <iframe
+                    src={`${previewResource.url}#toolbar=0`}
+                    className="w-full h-full border-0"
+                    title={previewResource.title}
+                  />
+                </div>
+              )}
+
+              {previewResource.resourceType === 'link' && previewResource.url && (
+                <div className="text-center py-12">
+                  <LinkIcon className="h-16 w-16 text-primary mx-auto mb-6" />
+                  <p className="text-lg font-semibold mb-4 text-foreground">External Resource</p>
+                  <p className="text-muted-foreground mb-6">
+                    This resource links to external content
+                  </p>
+                  <Button asChild size="lg">
+                    <a 
+                      href={previewResource.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="gap-2"
+                    >
+                      <LinkIcon className="h-5 w-5" />
+                      Open Link
+                    </a>
+                  </Button>
+                </div>
+              )}
+
+              {['audio', 'file'].includes(previewResource.resourceType) && previewResource.url && (
+                <div className="text-center py-12">
+                  <File className="h-16 w-16 text-primary mx-auto mb-6" />
+                  <p className="text-lg font-semibold mb-4 text-foreground">Downloadable Resource</p>
+                  <p className="text-muted-foreground mb-6">
+                    This resource is available as a file download
+                  </p>
+                  <Button asChild size="lg">
+                    <a 
+                      href={previewResource.url} 
+                      download
+                      className="gap-2"
+                    >
+                      <Download className="h-5 w-5" />
+                      Download File
+                    </a>
+                  </Button>
+                </div>
+              )}
+
+              {previewResource.description && (
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-semibold mb-2 text-foreground">Description</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {previewResource.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

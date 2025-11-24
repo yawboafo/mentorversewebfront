@@ -37,14 +37,24 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       return;
     }
     
+    console.log('🚀 fetchStructure called for contentId:', contentId);
+    
     try {
       setLoading(true);
       setError(null);
-      const structure = await modulesApi.getContentStructure(contentId);
+      console.log('📡 Calling modulesApi.getContentStructure...');
+      const response = await modulesApi.getContentStructure(contentId);
+      console.log('✅ Structure received:', response);
+      
+      // Handle wrapped response from backend
+      const structure = (response as any).data || response;
+      console.log('📦 Unwrapped structure:', structure);
+      console.log('📦 Modules in structure:', structure.modules);
+      
       setModules(structure.modules || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch structure');
-      console.error('Error fetching structure:', err);
+      console.error('❌ Error fetching structure:', err);
     } finally {
       setLoading(false);
     }
@@ -60,10 +70,13 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
       try {
         setLoading(true);
         setError(null);
-        const module = await modulesApi.createModule({
+        const response = await modulesApi.createModule({
           ...data,
           contentId,
         });
+        
+        // Unwrap the response if it's wrapped
+        const module = (response as any).module || response;
         
         // Add to local state
         setModules(prev => [...(prev || []), { ...module, resources: [] }]);
@@ -176,15 +189,20 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
           const currentModule = modules?.find(m => m.id === moduleId);
           const orderIndex = currentModule?.resources?.length || 0;
           
+          // Check if resource type is supported for upload
+          if (!['video', 'image', 'document'].includes(resourceType)) {
+            throw new Error(
+              `${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} files are not yet supported for direct upload. ` +
+              `Please upload your ${resourceType} to a file hosting service and use the "External Link" option instead.`
+            );
+          }
+          
           // Upload based on resource type
           let upload;
           const uploadOptions = { type: 'course_media' as const };
           switch (resourceType) {
             case 'video':
               upload = await mediaApi.uploadVideo(file, uploadOptions);
-              break;
-            case 'audio':
-              upload = await mediaApi.uploadAudio(file, uploadOptions);
               break;
             case 'image':
               upload = await mediaApi.uploadImage(file, uploadOptions);
@@ -193,7 +211,7 @@ export function useContentModules({ contentId }: UseContentModulesOptions) {
               upload = await mediaApi.uploadDocument(file, uploadOptions);
               break;
             default:
-              upload = await mediaApi.uploadFile(file, uploadOptions);
+              throw new Error(`Unsupported resource type: ${resourceType}`);
           }
 
           setUploadProgress(prev => ({

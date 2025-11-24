@@ -40,7 +40,8 @@ import {
   ChevronDown,
   ChevronRight,
   Save,
-  Wand2
+  Wand2,
+  Eye
 } from 'lucide-react';
 
 const contentTypeOptions = [
@@ -133,25 +134,36 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
   const [resourceUrl, setResourceUrl] = useState('');
   const [resourceFile, setResourceFile] = useState<File | null>(null);
   const [isFree, setIsFree] = useState(false);
+  const [previewResource, setPreviewResource] = useState<any | null>(null);
 
   const [newOutcome, setNewOutcome] = useState('');
   const [newTool, setNewTool] = useState('');
   const [newTag, setNewTag] = useState('');
 
-  // Fetch modules when content exists
+  // Fetch modules when content exists and on step 3
   useEffect(() => {
     if (contentId && currentStep === 3) {
       fetchStructure();
     }
   }, [contentId, currentStep, fetchStructure]);
 
-  // For edit mode, set content ID and jump to step 3 (modules) initially
+  // For edit mode, set content ID and fetch modules immediately
   useEffect(() => {
-    if (mode === 'edit' && initialData) {
+    console.log('🔄 Edit mode effect:', { mode, hasInitialData: !!initialData, contentId: initialData?.id });
+    if (mode === 'edit' && initialData?.id) {
+      console.log('✅ Setting contentId and fetching structure for:', initialData.id);
       setContentId(initialData.id);
-      // Start at step 1 but content is already saved
     }
   }, [mode, initialData]);
+  
+  // Fetch modules when contentId changes
+  useEffect(() => {
+    console.log('🔄 ContentId changed:', { contentId, mode });
+    if (contentId && mode === 'edit') {
+      console.log('📥 Fetching structure for contentId:', contentId);
+      fetchStructure();
+    }
+  }, [contentId, mode, fetchStructure]);
 
   const addLearningOutcome = () => {
     if (newOutcome.trim()) {
@@ -365,9 +377,26 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
       return;
     }
 
+    // Validate file size
+    if (resourceFile) {
+      const maxSizes = {
+        video: 200 * 1024 * 1024, // 200MB
+        image: 10 * 1024 * 1024,  // 10MB
+        document: 50 * 1024 * 1024 // 50MB
+      };
+      
+      const maxSize = maxSizes[resourceType as keyof typeof maxSizes];
+      if (maxSize && resourceFile.size > maxSize) {
+        const maxSizeMB = maxSize / (1024 * 1024);
+        toast.error(`File size exceeds the ${maxSizeMB}MB limit for ${resourceType}s`);
+        return;
+      }
+    }
+
     try {
       // Find the module to get the current resource count for orderIndex
       const currentModule = modules?.find(m => m.id === moduleId);
+      console.log('🔍 Found module:', currentModule);
       const orderIndex = currentModule?.resources?.length || 0;
 
       // For file uploads, pass the file object directly
@@ -1000,7 +1029,7 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
               ) : (
                 <div className="space-y-3">
                   {modules.map((module, index) => (
-                    <Card key={module.id}>
+                    <Card key={module.id || `module-${index}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
@@ -1169,21 +1198,43 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
                                 ) : (
                                   <div>
                                     <Label>File</Label>
-                                    <Input
-                                      type="file"
-                                      onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
-                                      accept={
-                                        resourceType === 'video'
-                                          ? 'video/*'
-                                          : resourceType === 'audio'
-                                          ? 'audio/*'
-                                          : resourceType === 'image'
-                                          ? 'image/*'
-                                          : resourceType === 'document'
-                                          ? '.pdf'
-                                          : '*'
-                                      }
-                                    />
+                                    {!['video', 'image', 'document'].includes(resourceType) ? (
+                                      <div className="p-4 bg-muted rounded-md space-y-2">
+                                        <p className="text-sm text-muted-foreground">
+                                          Direct upload is only supported for videos, images, and documents.
+                                        </p>
+                                        <p className="text-sm font-medium">
+                                          For {resourceType === 'audio' ? 'audio files' : 'other files'}, 
+                                          please:
+                                        </p>
+                                        <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                                          <li>Upload your file to a hosting service (Google Drive, Dropbox, etc.)</li>
+                                          <li>Get a shareable link</li>
+                                          <li>Use the "External Link" option above and paste the URL</li>
+                                        </ol>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <Input
+                                          type="file"
+                                          onChange={(e) => setResourceFile(e.target.files?.[0] || null)}
+                                          accept={
+                                            resourceType === 'video'
+                                              ? 'video/mp4,video/mpeg,video/quicktime,video/webm'
+                                              : resourceType === 'image'
+                                              ? 'image/jpeg,image/jpg,image/png,image/gif,image/webp'
+                                              : resourceType === 'document'
+                                              ? '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv'
+                                              : '*'
+                                          }
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {resourceType === 'video' && 'Max size: 200MB. Formats: MP4, MPEG, QuickTime, WebM'}
+                                          {resourceType === 'image' && 'Max size: 10MB. Formats: JPEG, PNG, GIF, WebP'}
+                                          {resourceType === 'document' && 'Max size: 50MB. Formats: PDF, Word, Excel, PowerPoint, Text'}
+                                        </p>
+                                      </>
+                                    )}
                                   </div>
                                 )}
                                 <div className="flex gap-2">
@@ -1233,6 +1284,62 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
                             </Button>
                           )}
 
+                          {/* Upload Progress */}
+                          {Object.values(uploadProgress).length > 0 && (
+                            <div className="space-y-2 mb-3">
+                              {Object.entries(uploadProgress).map(([id, progress]) => (
+                                <div 
+                                  key={id} 
+                                  className={`p-3 rounded-lg border transition-all ${
+                                    progress.status === 'complete' 
+                                      ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' 
+                                      : progress.status === 'error'
+                                      ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
+                                      : 'bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      {progress.status === 'complete' ? (
+                                        <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center">
+                                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </div>
+                                      ) : progress.status === 'error' ? (
+                                        <X className="h-4 w-4 text-red-500" />
+                                      ) : (
+                                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                      )}
+                                      <span className="text-sm font-medium">
+                                        {progress.status === 'uploading' && 'Uploading file...'}
+                                        {progress.status === 'processing' && 'Processing...'}
+                                        {progress.status === 'complete' && 'Upload complete!'}
+                                        {progress.status === 'error' && 'Upload failed'}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                      {progress.status === 'error' ? '' : `${progress.progress}%`}
+                                    </span>
+                                  </div>
+                                  {progress.status !== 'complete' && progress.status !== 'error' && (
+                                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                      <div 
+                                        className="bg-primary h-full transition-all duration-300 ease-out"
+                                        style={{ width: `${progress.progress}%` }}
+                                      />
+                                    </div>
+                                  )}
+                                  {progress.status === 'error' && progress.error && (
+                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                      {progress.error}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           {/* Resources List */}
                           {module.resources && module.resources.length > 0 ? (
                             <div className="space-y-2">
@@ -1278,13 +1385,24 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
                                       </div>
                                     </div>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteResource(resource.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setPreviewResource(resource)}
+                                      title="Preview resource"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteResource(resource.id)}
+                                      title="Delete resource"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -1458,6 +1576,147 @@ export function ContentForm({ mode, initialData, onSuccess }: ContentFormProps) 
           </div>
         )}
       </div>
+      
+      {/* Resource Preview Modal */}
+      {previewResource && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setPreviewResource(null)}
+        >
+          <div 
+            className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg">{previewResource.title}</h3>
+                {previewResource.description && (
+                  <p className="text-sm text-muted-foreground mt-1">{previewResource.description}</p>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreviewResource(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6">
+              {/* Video Preview */}
+              {previewResource.resourceType === 'video' && (
+                <video 
+                  controls 
+                  className="w-full rounded-lg"
+                  src={previewResource.url}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
+              
+              {/* Audio Preview */}
+              {previewResource.resourceType === 'audio' && (
+                <div className="flex flex-col items-center gap-4">
+                  <Music className="h-24 w-24 text-muted-foreground" />
+                  <audio 
+                    controls 
+                    className="w-full"
+                    src={previewResource.url}
+                  >
+                    Your browser does not support the audio tag.
+                  </audio>
+                </div>
+              )}
+              
+              {/* Image Preview */}
+              {previewResource.resourceType === 'image' && (
+                <img 
+                  src={previewResource.url} 
+                  alt={previewResource.title}
+                  className="w-full rounded-lg"
+                />
+              )}
+              
+              {/* Document Preview */}
+              {previewResource.resourceType === 'document' && (
+                <div className="space-y-4">
+                  <iframe
+                    src={`${previewResource.url}#toolbar=0`}
+                    className="w-full h-[600px] rounded-lg border"
+                    title={previewResource.title}
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => window.open(previewResource.url, '_blank')}
+                  >
+                    Open in New Tab
+                  </Button>
+                </div>
+              )}
+              
+              {/* Link Preview */}
+              {previewResource.resourceType === 'link' && (
+                <div className="text-center space-y-4">
+                  <LinkIcon className="h-24 w-24 text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">External Link</p>
+                  <Button
+                    onClick={() => window.open(previewResource.url, '_blank')}
+                    className="w-full"
+                  >
+                    Open Link
+                  </Button>
+                </div>
+              )}
+              
+              {/* File/Other Preview */}
+              {(previewResource.resourceType === 'file' || 
+                !['video', 'audio', 'image', 'document', 'link'].includes(previewResource.resourceType)) && (
+                <div className="text-center space-y-4">
+                  <File className="h-24 w-24 text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">
+                    {previewResource.fileSize && `File size: ${formatFileSize(previewResource.fileSize)}`}
+                  </p>
+                  <Button
+                    onClick={() => window.open(previewResource.url, '_blank')}
+                    className="w-full"
+                  >
+                    Download File
+                  </Button>
+                </div>
+              )}
+              
+              {/* Resource Metadata */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="ml-2 capitalize">{previewResource.resourceType}</span>
+                  </div>
+                  {previewResource.fileSize && (
+                    <div>
+                      <span className="text-muted-foreground">Size:</span>
+                      <span className="ml-2">{formatFileSize(previewResource.fileSize)}</span>
+                    </div>
+                  )}
+                  {previewResource.duration && (
+                    <div>
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span className="ml-2">{Math.round(previewResource.duration / 60)} minutes</span>
+                    </div>
+                  )}
+                  {previewResource.isPreview && (
+                    <div>
+                      <Badge variant="secondary">Free Preview</Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
