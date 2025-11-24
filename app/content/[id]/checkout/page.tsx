@@ -29,7 +29,7 @@ export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.id as string;
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { isPurchased, loading: checkingPurchase } = usePurchaseStatus(contentId);
 
   const [content, setContent] = useState<Content | null>(null);
@@ -38,6 +38,11 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Wait for auth to load before checking authentication
+    if (authLoading) {
+      return;
+    }
+
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
       router.push(`/auth/login?redirect=/content/${contentId}/checkout`);
@@ -57,7 +62,7 @@ export default function CheckoutPage() {
     };
 
     fetchContent();
-  }, [contentId, isAuthenticated, router]);
+  }, [contentId, isAuthenticated, authLoading, router]);
 
   // Check if already purchased and redirect
   useEffect(() => {
@@ -106,7 +111,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (isLoading || checkingPurchase) {
+  if (authLoading || isLoading || checkingPurchase) {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
