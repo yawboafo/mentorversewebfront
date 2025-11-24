@@ -17,7 +17,11 @@ import {
 } from '@/components/ui/accordion';
 import { contentApi } from '@/lib/api/content';
 import { modulesApi } from '@/lib/api/modules';
-import { Content, ContentModule } from '@/lib/api/types';
+import { Content, ContentModule, ContentResource } from '@/lib/api/types';
+
+interface ContentModuleWithResources extends ContentModule {
+  resources?: ContentResource[];
+}
 import {
   BookOpen,
   Clock,
@@ -58,7 +62,7 @@ export default function CourseDetailPage() {
   const contentId = params.id as string;
   
   const [content, setContent] = useState<Content | null>(null);
-  const [modules, setModules] = useState<ContentModule[]>([]);
+  const [modules, setModules] = useState<ContentModuleWithResources[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewResource, setPreviewResource] = useState<any>(null);
 
