@@ -106,11 +106,12 @@ export default function AIBuilderPage() {
           if (outlineModule.resources && outlineModule.resources.length > 0) {
             for (let j = 0; j < outlineModule.resources.length; j++) {
               const resource = outlineModule.resources[j];
+              const resourceType = typeof resource === 'object' && resource.type ? resource.type : 'document';
               const resourcePayload = {
                 moduleId: createdModule.id,
                 title: typeof resource === 'string' ? resource : resource.title,
                 description: '', // Resource type doesn't have description field
-                resourceType: (typeof resource === 'object' && resource.type ? resource.type : 'document') as const,
+                resourceType: resourceType as any,
                 url: typeof resource === 'string' ? 'https://example.com/resource' : (resource.url || 'https://example.com/resource'),
                 orderIndex: j,
                 isPreview: j === 0, // First resource is preview
