@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/accordion';
 import { contentApi } from '@/lib/api/content';
 import { modulesApi } from '@/lib/api/modules';
+import { usePurchaseStatus } from '@/hooks/use-purchase-status';
 import { Content, ContentModule, ContentResource } from '@/lib/api/types';
 
 interface ContentModuleWithResources extends ContentModule {
@@ -60,13 +61,11 @@ import { PriceDisplay } from '@/components/ui/price-display';
 export default function CourseDetailPage() {
   const params = useParams();
   const contentId = params.id as string;
+  const { isPurchased, loading: checkingPurchase, purchase } = usePurchaseStatus(contentId);
   
   const [content, setContent] = useState<Content | null>(null);
   const [modules, setModules] = useState<ContentModuleWithResources[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [enrolledAt, setEnrolledAt] = useState<string | undefined>();
-  const [checkingEnrollment, setCheckingEnrollment] = useState(true);
   const [previewResource, setPreviewResource] = useState<any>(null);
 
   const getResourceIcon = (type: string) => {
@@ -104,25 +103,19 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contentData, structureData, enrollmentStatus] = await Promise.all([
+        const [contentData, structureData] = await Promise.all([
           contentApi.getContentById(contentId),
-          modulesApi.getContentStructure(contentId).catch(() => ({ data: { modules: [] } })),
-          contentApi.getEnrollmentStatus(contentId).catch(() => ({ isEnrolled: false }))
+          modulesApi.getContentStructure(contentId).catch(() => ({ data: { modules: [] } }))
         ]);
         
         setContent(contentData);
         // Handle wrapped response
         const structure = (structureData as any).data || structureData;
         setModules(structure.modules || []);
-        
-        // Set enrollment status
-        setIsEnrolled(enrollmentStatus.isEnrolled);
-        setEnrolledAt(enrollmentStatus.enrolledAt);
       } catch (error) {
         console.error('Failed to fetch content:', error);
       } finally {
         setIsLoading(false);
-        setCheckingEnrollment(false);
       }
     };
 
@@ -138,7 +131,7 @@ export default function CourseDetailPage() {
       .slice(0, 2);
   };
 
-  if (isLoading) {
+  if (isLoading || checkingPurchase) {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -598,7 +591,7 @@ export default function CourseDetailPage() {
                   <Separator />
 
                   {/* Primary CTA - Dynamic based on enrollment */}
-                  {checkingEnrollment ? (
+                  {checkingPurchase ? (
                     <Button 
                       size="lg" 
                       className="w-full h-14 rounded-xl"
@@ -607,7 +600,7 @@ export default function CourseDetailPage() {
                       <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                       Checking status...
                     </Button>
-                  ) : isEnrolled ? (
+                  ) : isPurchased ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />

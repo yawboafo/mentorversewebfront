@@ -84,8 +84,13 @@ export default function CheckoutPage() {
       
       // Handle specific error cases
       if (error.status === 500) {
-        toast.error('Payment system error. Please contact support or try again later.');
-        setError('The payment system is currently unavailable. This may be due to missing payment configuration on the backend.');
+        if (error.message?.includes('initialize')) {
+          toast.error('Payment system is not configured on the backend');
+          setError('The Paystack payment integration is not properly configured on the backend. Please ensure PAYSTACK_SECRET_KEY environment variable is set.');
+        } else {
+          toast.error('Payment system error. Please contact support or try again later.');
+          setError('The payment system is currently unavailable. This may be due to missing payment configuration on the backend.');
+        }
       } else if (error.message?.includes('already purchased')) {
         toast.error('You have already purchased this content');
         router.push(`/content/${contentId}`);

@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import type { Content, ContentFull, CheckoutRequest, CheckoutResponse } from './types';
+import { purchasesApi } from './purchases';
 
 export interface ContentQuery {
   q?: string;
@@ -73,14 +74,29 @@ export const contentApi = {
   },
 
   /**
-   * Get all content the current user has access to (enrolled courses)
+   * Get all content the current user has access to (enrolled/purchased courses)
+   * Works by fetching purchases and then getting content details for each
    */
   async getMyEnrolledContent(): Promise<Content[]> {
-    const response = await apiClient.get<Content[] | { data: Content[] }>('/users/me/content');
-    // Handle both array and wrapped response formats
-    if (Array.isArray(response)) {
-      return response;
+    try {
+      // Get all purchases
+      const purchases = await purchasesApi.getMyPurchases();
+      
+      // Filter for paid purchases only
+      const paidPurchases = purchases.filter(p => p.status === 'paid');
+      
+      // Fetch content details for each purchase
+      const contentPromises = paidPurchases.map(purchase => 
+        this.getContentById(purchase.contentId).catch(() => null)
+      );
+      
+      const contents = await Promise.all(contentPromises);
+      
+      // Filter out any failed fetches (null values)
+      return contents.filter((c): c is Content => c !== null);
+    } catch (error) {
+      console.error('Failed to fetch enrolled content:', error);
+      return [];
     }
-    return response.data || [];
   },
 };
