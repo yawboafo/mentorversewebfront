@@ -177,7 +177,7 @@ export function ContinueLearning() {
       {activeCourses.length > 0 && (
         <div className="flex justify-center pt-4">
           <Button asChild variant="ghost">
-            <Link href="/dashboard/courses">
+            <Link href="/dashboard">
               View all your courses
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
