@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { appointmentsApi } from '@/lib/api/appointments';
+import { contentApi } from '@/lib/api/content';
 import type { Appointment } from '@/lib/api/appointments';
 import { MentorDashboard } from '@/lib/api/types';
 import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function MentorDashboardPage() {
   const { user, isLoading: authLoading } = useRequireRole(['mentor', 'admin']);
   const [dashboardData, setDashboardData] = useState<MentorDashboard | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [publishedContentCount, setPublishedContentCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -44,9 +46,25 @@ export default function MentorDashboardPage() {
       }
     };
 
+    const fetchPublishedContent = async () => {
+      try {
+        // Fetch mentor's published content
+        const response = await contentApi.getContent({
+          mentor_id: user?.id,
+          limit: 1000 // Get all to count
+        });
+        // Count only published content
+        const publishedCount = response.data.filter(c => c.status === 'published').length;
+        setPublishedContentCount(publishedCount);
+      } catch (err: any) {
+        console.error('Failed to fetch published content count:', err);
+      }
+    };
+
     if (user) {
       fetchDashboard();
       fetchAppointments();
+      fetchPublishedContent();
     }
   }, [user]);
 
@@ -155,8 +173,15 @@ export default function MentorDashboardPage() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData?.top_content?.length || 0}</div>
+            <div className="text-2xl font-bold">{publishedContentCount}</div>
             <p className="text-xs text-muted-foreground mt-1">Courses & frameworks</p>
+            {publishedContentCount > 0 && (
+              <Button asChild size="sm" variant="link" className="px-0 mt-2">
+                <Link href="/mentor/content">
+                  View all <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
 
