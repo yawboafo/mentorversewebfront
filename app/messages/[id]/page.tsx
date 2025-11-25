@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { use, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, ArrowLeft, MoreVertical, Loader2, AlertCircle } from 'lucide-react';
 import { messagesApi } from '@/lib/api';
@@ -11,7 +11,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function MessagingPage({ params }: { params: { id: string } }) {
+export default function MessagingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: mentorId } = use(params);
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<ConversationMessages | null>(null);
@@ -21,7 +22,6 @@ export default function MessagingPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const mentorId = params.id;
 
   // Load conversation and check access
   useEffect(() => {
