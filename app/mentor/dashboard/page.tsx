@@ -11,8 +11,9 @@ import { useRequireRole } from '@/hooks/use-require-auth';
 import { mentorsApi } from '@/lib/api/mentors';
 import { appointmentsApi } from '@/lib/api/appointments';
 import { contentApi } from '@/lib/api/content';
+import { mentorSubscriptionsApi } from '@/lib/api/mentor-subscriptions';
 import type { Appointment } from '@/lib/api/appointments';
-import { MentorDashboard } from '@/lib/api/types';
+import { MentorDashboard, MentorAccessType, MentorSettings } from '@/lib/api/types';
 import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video, Settings } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -23,6 +24,7 @@ export default function MentorDashboardPage() {
   const [dashboardData, setDashboardData] = useState<MentorDashboard | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [publishedContentCount, setPublishedContentCount] = useState(0);
+  const [mentorSettings, setMentorSettings] = useState<MentorSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -62,10 +64,20 @@ export default function MentorDashboardPage() {
       }
     };
 
+    const fetchMentorSettings = async () => {
+      try {
+        const response = await mentorSubscriptionsApi.getMentorSettings();
+        setMentorSettings(response.data);
+      } catch (err: any) {
+        console.error('Failed to fetch mentor settings:', err);
+      }
+    };
+
     if (user) {
       fetchDashboard();
       fetchAppointments();
       fetchPublishedContent();
+      fetchMentorSettings();
     }
   }, [user]);
 
@@ -196,6 +208,75 @@ export default function MentorDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Setup CTA for Unconfigured Mentors */}
+      {mentorSettings && mentorSettings.accessType === MentorAccessType.OPEN && (
+        <Card className="mb-12 border-primary bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <DollarSign className="h-6 w-6 text-primary" />
+                  Start Earning with Paid Subscriptions
+                </CardTitle>
+                <CardDescription className="mt-2 text-base">
+                  Your profile is currently set to free access. Configure paid subscription pricing to start monetizing your expertise and exclusive content.
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="ml-4">New</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <MessageCircle className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Exclusive Messaging</p>
+                    <p className="text-muted-foreground text-xs">Offer direct access to paid subscribers</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Video className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Premium 1:1 Sessions</p>
+                    <p className="text-muted-foreground text-xs">Monetize your time with private sessions</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Exclusive Courses</p>
+                    <p className="text-muted-foreground text-xs">Share premium content with subscribers</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Group Sessions</p>
+                    <p className="text-muted-foreground text-xs">Host exclusive group mentorship</p>
+                  </div>
+                </div>
+              </div>
+              <Button asChild size="lg" className="w-full md:w-auto bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
+                <Link href="/mentor/subscription-settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Subscription Settings
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card className="mb-12">

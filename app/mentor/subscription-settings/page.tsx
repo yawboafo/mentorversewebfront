@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ export default function MentorSubscriptionSettingsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFirstTime, setIsFirstTime] = useState(false);
   const [settings, setSettings] = useState<Partial<MentorSettings>>({
     accessType: MentorAccessType.OPEN,
     baseSubscriptionPrice: 0,
@@ -45,11 +47,15 @@ export default function MentorSubscriptionSettingsPage() {
       try {
         const response = await mentorSubscriptionsApi.getMentorSettings();
         setSettings(response.data);
+        // Check if this is first-time (auto-created settings)
+        const isNewlyCreated = response.data.createdAt === response.data.updatedAt;
+        setIsFirstTime(isNewlyCreated && response.data.accessType === MentorAccessType.OPEN);
       } catch (error: any) {
         // If no settings exist yet, keep the defaults
         if (error.status !== 404) {
           console.error('Failed to fetch settings:', error);
         }
+        setIsFirstTime(true); // Definitely first-time if no settings exist
       } finally {
         setIsLoading(false);
       }
@@ -104,6 +110,18 @@ export default function MentorSubscriptionSettingsPage() {
             Configure how mentees can access your mentorship services
           </p>
         </div>
+
+        {/* First-Time Setup Banner */}
+        {isFirstTime && (
+          <Alert className="mb-6 border-primary/50 bg-primary/5">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <AlertTitle>Welcome to Subscription Settings! 🎉</AlertTitle>
+            <AlertDescription>
+              Your profile is currently set to <strong>free access</strong>. Configure pricing below to start earning from paid subscriptions. 
+              You can offer premium content, 1:1 sessions, and exclusive messaging to your subscribers.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-6">
           {/* Access Type Card */}
