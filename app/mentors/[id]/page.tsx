@@ -84,8 +84,8 @@ export default function MentorDetailPage() {
         setIsLoadingSubscriptionData(true);
         
         // Fetch public mentor settings (always available)
-        const settings = await mentorSubscriptionsApi.getPublicMentorSettings(mentorId);
-        setMentorSettings(settings);
+        const settingsResponse = await mentorSubscriptionsApi.getPublicMentorSettings(mentorId);
+        setMentorSettings(settingsResponse.data);
 
         // Check access status (only if user is logged in and not viewing own profile)
         if (user && user.id !== mentorId) {
@@ -126,11 +126,11 @@ export default function MentorDetailPage() {
   const handleSubscriptionSuccess = async () => {
     // Refresh subscription data after successful subscription
     try {
-      const [settings, access] = await Promise.all([
+      const [settingsResponse, access] = await Promise.all([
         mentorSubscriptionsApi.getPublicMentorSettings(mentorId),
         user ? mentorSubscriptionsApi.checkMentorAccess(mentorId) : Promise.resolve(null),
       ]);
-      setMentorSettings(settings);
+      setMentorSettings(settingsResponse.data);
       if (access) setAccessStatus(access);
     } catch (error) {
       console.error('Failed to refresh subscription data:', error);
