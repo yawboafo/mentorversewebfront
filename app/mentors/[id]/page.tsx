@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { mentorsApi } from '@/lib/api/mentors';
 import { contentApi } from '@/lib/api/content';
-import { Mentor, Content } from '@/lib/api/types';
+import { mentorSubscriptionsApi } from '@/lib/api/mentor-subscriptions';
+import { Mentor, Content, MentorSettings, MentorAccessStatus } from '@/lib/api/types';
 import { 
   User, Globe, Briefcase, MapPin, MessageSquare, Award, Calendar,
   Check, UserPlus, Loader2, Star, TrendingUp, Users, BookOpen,
@@ -21,6 +22,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { BookAppointmentModal } from '@/components/book-appointment-modal';
 import { CourseLearningCard } from '@/components/course-learning-card';
+import { MentorAccessCard } from '@/components/mentors/mentor-access-card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -37,6 +40,13 @@ export default function MentorDetailPage() {
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showSubscriptionRequiredDialog, setShowSubscriptionRequiredDialog] = useState(false);
+  const [subscriptionRequiredReason, setSubscriptionRequiredReason] = useState('');
+  
+  // Paid subscription state
+  const [mentorSettings, setMentorSettings] = useState<MentorSettings | null>(null);
+  const [accessStatus, setAccessStatus] = useState<MentorAccessStatus | null>(null);
+  const [isLoadingSubscriptionData, setIsLoadingSubscriptionData] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +75,36 @@ export default function MentorDetailPage() {
     fetchData();
   }, [mentorId]);
 
+  // Fetch paid subscription data
+  useEffect(() => {
+    const fetchSubscriptionData = async () => {
+      if (!mentorId) return;
+
+      try {
+        setIsLoadingSubscriptionData(true);
+        
+        // Fetch public mentor settings (always available)
+        const settings = await mentorSubscriptionsApi.getPublicMentorSettings(mentorId);
+        setMentorSettings(settings);
+
+        // Check access status (only if user is logged in and not viewing own profile)
+        if (user && user.id !== mentorId) {
+          const access = await mentorSubscriptionsApi.checkMentorAccess(mentorId);
+          setAccessStatus(access);
+        }
+      } catch (error: any) {
+        console.error('Failed to fetch subscription data:', error);
+        // Silently fail - mentor might not have paid subscriptions enabled
+        setMentorSettings(null);
+        setAccessStatus(null);
+      } finally {
+        setIsLoadingSubscriptionData(false);
+      }
+    };
+
+    fetchSubscriptionData();
+  }, [mentorId, user]);
+
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user || !mentorId || user.id === mentorId) return;
@@ -82,6 +122,58 @@ export default function MentorDetailPage() {
 
     checkSubscription();
   }, [user, mentorId]);
+
+  const handleSubscriptionSuccess = async () => {
+    // Refresh subscription data after successful subscription
+    try {
+      const [settings, access] = await Promise.all([
+        mentorSubscriptionsApi.getPublicMentorSettings(mentorId),
+        user ? mentorSubscriptionsApi.checkMentorAccess(mentorId) : Promise.resolve(null),
+      ]);
+      setMentorSettings(settings);
+      if (access) setAccessStatus(access);
+    } catch (error) {
+      console.error('Failed to refresh subscription data:', error);
+    }
+  };
+
+  const handleMessageClick = () => {
+    if (!user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/mentors/${mentorId}`)}`);
+      return;
+    }
+
+    // Check access for paid mentors
+    if (accessStatus && !accessStatus.canMessage) {
+      setSubscriptionRequiredReason(
+        accessStatus.messagingDeniedReason || 'You need an active subscription to message this mentor.'
+      );
+      setShowSubscriptionRequiredDialog(true);
+      return;
+    }
+
+    // Navigate to messages
+    router.push(`/messages/${mentorId}`);
+  };
+
+  const handleBookAppointmentClick = () => {
+    if (!user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/mentors/${mentorId}`)}`);
+      return;
+    }
+
+    // Check access for paid mentors
+    if (accessStatus && !accessStatus.canBookAppointment) {
+      setSubscriptionRequiredReason(
+        accessStatus.appointmentDeniedReason || 'You need an active subscription to book appointments with this mentor.'
+      );
+      setShowSubscriptionRequiredDialog(true);
+      return;
+    }
+
+    // Show appointment modal
+    setShowAppointmentModal(true);
+  };
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -225,7 +317,7 @@ export default function MentorDetailPage() {
                         <Button 
                           size="lg" 
                           variant="outline"
-                          onClick={() => setShowAppointmentModal(true)}
+                          onClick={handleBookAppointmentClick}
                           className="h-14 px-8 text-base font-semibold"
                         >
                           <Calendar className="h-5 w-5 mr-2" />
@@ -258,6 +350,7 @@ export default function MentorDetailPage() {
                 <Button 
                   size="lg" 
                   variant="outline"
+                  onClick={handleMessageClick}
                   className="h-14 px-8 text-base font-semibold"
                 >
                   <MessageCircle className="h-5 w-5 mr-2" />
@@ -402,6 +495,18 @@ export default function MentorDetailPage() {
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
               
+              {/* Paid Subscription Card */}
+              {mentorSettings && user?.id !== mentorId && (
+                <MentorAccessCard
+                  mentorId={mentorId}
+                  mentorName={mentor.user?.fullName || mentor.headline}
+                  settings={mentorSettings}
+                  accessStatus={accessStatus}
+                  isLoading={isLoadingSubscriptionData}
+                  onSubscribeSuccess={handleSubscriptionSuccess}
+                />
+              )}
+
               {/* Contact/Actions Card */}
               <Card className="border-2 border-primary/30 shadow-2xl overflow-hidden">
                 <div className="h-2 bg-gradient-to-r from-primary via-accent to-secondary" />
@@ -440,7 +545,7 @@ export default function MentorDetailPage() {
                           <Button 
                             size="lg" 
                             variant="outline"
-                            onClick={() => setShowAppointmentModal(true)}
+                            onClick={handleBookAppointmentClick}
                             className="w-full h-12 text-base font-semibold"
                           >
                             <Calendar className="h-5 w-5 mr-2" />
@@ -527,6 +632,64 @@ export default function MentorDetailPage() {
         mentorName={mentor.user?.fullName || mentor.headline}
         onClose={() => setShowAppointmentModal(false)}
       />
+
+      {/* Subscription Required Dialog */}
+      <Dialog open={showSubscriptionRequiredDialog} onOpenChange={setShowSubscriptionRequiredDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subscription Required</DialogTitle>
+            <DialogDescription>
+              {subscriptionRequiredReason}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {mentorSettings && (
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm font-medium mb-2">Subscribe to unlock:</p>
+                <ul className="space-y-2 text-sm">
+                  {mentorSettings.allowsMessaging && (
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Direct messaging
+                    </li>
+                  )}
+                  {mentorSettings.offers1to1Sessions && (
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      1:1 mentorship sessions
+                    </li>
+                  )}
+                  {mentorSettings.offersGroupSessions && (
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Group sessions and workshops
+                    </li>
+                  )}
+                  {mentorSettings.offersCourses && (
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Exclusive courses and content
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSubscriptionRequiredDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setShowSubscriptionRequiredDialog(false);
+              // Scroll to subscription card
+              const subscriptionCard = document.querySelector('[data-subscription-card]');
+              subscriptionCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}>
+              View Subscription Options
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

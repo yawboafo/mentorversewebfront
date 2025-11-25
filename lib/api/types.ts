@@ -656,3 +656,118 @@ export interface AppointmentsListResponse {
     totalPages: number;
   };
 }
+
+// ========================================
+// PAID MENTOR SUBSCRIPTION TYPES
+// ========================================
+
+export enum MentorAccessType {
+  OPEN = 'open',
+  PAID = 'paid',
+  VIP = 'vip'
+}
+
+export enum BillingPeriod {
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  YEARLY = 'yearly'
+}
+
+export enum PaidSubscriptionStatus {
+  ACTIVE = 'active',
+  PENDING_PAYMENT = 'pending_payment',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired'
+}
+
+export interface MentorSettings {
+  id: string;
+  mentorId: string;
+  accessType: MentorAccessType;
+  baseSubscriptionPrice?: number;
+  currency: string;
+  billingPeriod: BillingPeriod;
+  offersCourses: boolean;
+  offers1to1Sessions: boolean;
+  offersGroupSessions: boolean;
+  allowsMessaging: boolean;
+  messageLimitPerPeriod?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaidMentorSubscription {
+  id: string;
+  menteeId: string;
+  mentorId: string;
+  status: PaidSubscriptionStatus;
+  isPaid: boolean;
+  priceAmount: number;
+  currency: string;
+  billingPeriod: BillingPeriod;
+  paymentProvider?: string;
+  paymentRef?: string;
+  startsAt: string;
+  renewsAt?: string;
+  expiresAt?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  mentor?: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+    mentorProfile?: {
+      headline?: string;
+      shortBio?: string;
+    };
+  };
+  mentee?: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface MentorAccessStatus {
+  canMessage: boolean;
+  canBookAppointment: boolean;
+  accessType: MentorAccessType;
+  hasActiveSubscription: boolean;
+  subscriptionStatus?: PaidSubscriptionStatus;
+  subscription?: PaidMentorSubscription;
+  messagingDeniedReason?: string;
+  appointmentDeniedReason?: string;
+  subscriptionRequired?: boolean;
+}
+
+export interface MentorSettingsResponse {
+  success: boolean;
+  data: MentorSettings;
+  stats?: {
+    paidSubscribers: number;
+    totalSubscribers: number;
+    activeAppointments: number;
+  };
+}
+
+export interface SubscribeResponse {
+  success: boolean;
+  subscription: PaidMentorSubscription;
+  requiresPayment: boolean;
+  checkoutUrl?: string;
+  message: string;
+}
+
+export interface PaidSubscriptionsListResponse {
+  success: boolean;
+  data: PaidMentorSubscription[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}

@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { DashboardData } from '@/lib/api/types';
 import { format, parseISO } from 'date-fns';
 import { ContinueLearning } from '@/components/dashboard/continue-learning';
+import { MyMentorsWidget } from '@/components/mentors/my-mentors-widget';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -223,6 +224,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* My Mentors Widget */}
+      <MyMentorsWidget maxDisplay={3} showViewAll={true} />
 
       {/* Upcoming Appointments */}
       {upcomingAppointments.length > 0 && (
