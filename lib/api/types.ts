@@ -771,3 +771,58 @@ export interface PaidSubscriptionsListResponse {
     offset: number;
   };
 }
+
+// Messaging Types
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  recipientId: string;
+  content: string;
+  readAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  mentorId: string;
+  menteeId: string;
+  lastMessageAt?: string;
+  lastMessage?: string;
+  unreadCount: number;
+  mentor: {
+    id: string;
+    fullName: string;
+    profilePictureUrl?: string;
+    areasOfExpertise?: string[];
+  };
+  mentee: {
+    id: string;
+    fullName: string;
+    profilePictureUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationMessages {
+  conversation: Conversation;
+  messages: Message[];
+  hasMore: boolean;
+  totalMessages: number;
+}
+
+export interface SendMessageRequest {
+  content: string;
+}
+
+export interface ConversationsListResponse {
+  success: boolean;
+  data: Conversation[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}

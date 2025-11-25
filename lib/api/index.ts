@@ -13,3 +13,4 @@ export * from './admin';
 export * from './timeline';
 export * from './media';
 export * from './payment';
+export { messagesApi } from './messages';
