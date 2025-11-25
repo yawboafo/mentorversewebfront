@@ -13,7 +13,7 @@ import { appointmentsApi } from '@/lib/api/appointments';
 import { contentApi } from '@/lib/api/content';
 import type { Appointment } from '@/lib/api/appointments';
 import { MentorDashboard } from '@/lib/api/types';
-import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video } from 'lucide-react';
+import { DollarSign, BookOpen, TrendingUp, Users, Plus, BarChart3, Loader2, ArrowRight, Sparkles, Calendar, Clock, Video, Settings } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
 import { UpcomingSessions } from '@/components/mentor/upcoming-sessions';
@@ -196,6 +196,45 @@ export default function MentorDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card className="mb-12">
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Manage your mentor profile and settings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-4">
+              <Link href="/mentor/subscription-settings">
+                <Settings className="h-5 w-5 mb-2" />
+                <div className="text-left">
+                  <div className="font-semibold">Subscription Settings</div>
+                  <div className="text-xs text-muted-foreground mt-1">Configure pricing, access types, and services</div>
+                </div>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-4">
+              <Link href="/mentor/content">
+                <BookOpen className="h-5 w-5 mb-2" />
+                <div className="text-left">
+                  <div className="font-semibold">Manage Content</div>
+                  <div className="text-xs text-muted-foreground mt-1">View and edit your courses</div>
+                </div>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-4">
+              <Link href="/mentor/appointments">
+                <Calendar className="h-5 w-5 mb-2" />
+                <div className="text-left">
+                  <div className="font-semibold">Manage Appointments</div>
+                  <div className="text-xs text-muted-foreground mt-1">View and schedule sessions</div>
+                </div>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Appointments Section */}
       <UpcomingSessions appointments={upcomingAppointments} isLoading={isLoading} />
