@@ -89,8 +89,8 @@ export default function MentorDetailPage() {
 
         // Check access status (only if user is logged in and not viewing own profile)
         if (user && user.id !== mentorId) {
-          const access = await mentorSubscriptionsApi.checkMentorAccess(mentorId);
-          setAccessStatus(access);
+          const accessResponse = await mentorSubscriptionsApi.checkMentorAccess(mentorId);
+          setAccessStatus(accessResponse.data);
         }
       } catch (error: any) {
         console.error('Failed to fetch subscription data:', error);
@@ -126,12 +126,12 @@ export default function MentorDetailPage() {
   const handleSubscriptionSuccess = async () => {
     // Refresh subscription data after successful subscription
     try {
-      const [settingsResponse, access] = await Promise.all([
+      const [settingsResponse, accessResponse] = await Promise.all([
         mentorSubscriptionsApi.getPublicMentorSettings(mentorId),
         user ? mentorSubscriptionsApi.checkMentorAccess(mentorId) : Promise.resolve(null),
       ]);
       setMentorSettings(settingsResponse.data);
-      if (access) setAccessStatus(access);
+      if (accessResponse) setAccessStatus(accessResponse.data);
     } catch (error) {
       console.error('Failed to refresh subscription data:', error);
     }
