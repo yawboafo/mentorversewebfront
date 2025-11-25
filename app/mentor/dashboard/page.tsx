@@ -285,7 +285,16 @@ export default function MentorDashboardPage() {
           <CardDescription>Manage your mentor profile and settings</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button asChild variant="outline" className="h-auto flex-col items-start p-4">
+              <Link href="/mentor/messages">
+                <MessageCircle className="h-5 w-5 mb-2" />
+                <div className="text-left">
+                  <div className="font-semibold">Messages</div>
+                  <div className="text-xs text-muted-foreground mt-1">Chat with your mentees</div>
+                </div>
+              </Link>
+            </Button>
             <Button asChild variant="outline" className="h-auto flex-col items-start p-4">
               <Link href="/mentor/subscription-settings">
                 <Settings className="h-5 w-5 mb-2" />

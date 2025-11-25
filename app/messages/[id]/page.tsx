@@ -130,7 +130,12 @@ export default function MessagingPage({ params }: { params: { id: string } }) {
 
   const { conversation, messages } = data;
   const mentor = conversation.mentor;
+  const mentee = conversation.mentee;
   const isMentor = user?.id === mentor.id;
+  
+  // Determine who to display in header
+  const displayPerson = isMentor ? mentee : mentor;
+  const displayLink = isMentor ? `/mentor/mentees/${mentee.id}` : `/mentors/${mentor.id}`;
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
@@ -146,29 +151,33 @@ export default function MessagingPage({ params }: { params: { id: string } }) {
                 <ArrowLeft className="w-5 h-5 text-zinc-400" />
               </button>
               
-              <Link href={`/mentors/${mentor.id}`} className="flex items-center gap-3 group">
+              <Link href={displayLink} className="flex items-center gap-3 group">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden bg-zinc-800">
-                  {mentor.profilePictureUrl ? (
+                  {displayPerson.profilePictureUrl ? (
                     <Image
-                      src={mentor.profilePictureUrl}
-                      alt={mentor.fullName}
+                      src={displayPerson.profilePictureUrl}
+                      alt={displayPerson.fullName}
                       fill
                       className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-white font-semibold">
-                      {mentor.fullName.charAt(0)}
+                      {displayPerson.fullName.charAt(0)}
                     </div>
                   )}
                 </div>
                 <div>
                   <h1 className="font-semibold text-white group-hover:text-zinc-300 transition-colors">
-                    {mentor.fullName}
+                    {displayPerson.fullName}
                   </h1>
-                  {mentor.areasOfExpertise && mentor.areasOfExpertise.length > 0 && (
-                    <p className="text-xs text-zinc-500">
-                      {mentor.areasOfExpertise[0]}
-                    </p>
+                  {isMentor ? (
+                    <p className="text-xs text-zinc-500">Mentee</p>
+                  ) : (
+                    mentor.areasOfExpertise && mentor.areasOfExpertise.length > 0 && (
+                      <p className="text-xs text-zinc-500">
+                        {mentor.areasOfExpertise[0]}
+                      </p>
+                    )
                   )}
                 </div>
               </Link>
@@ -195,7 +204,10 @@ export default function MessagingPage({ params }: { params: { id: string } }) {
               </div>
               <h2 className="text-xl font-semibold text-white mb-2">Start the conversation</h2>
               <p className="text-zinc-400 max-w-sm">
-                Send your first message to {mentor.fullName} to begin your mentorship journey.
+                {isMentor 
+                  ? `Send your first message to ${mentee.fullName}.`
+                  : `Send your first message to ${mentor.fullName} to begin your mentorship journey.`
+                }
               </p>
             </motion.div>
           ) : (
@@ -281,7 +293,7 @@ export default function MessagingPage({ params }: { params: { id: string } }) {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Message ${mentor.fullName}...`}
+              placeholder={`Message ${displayPerson.fullName}...`}
               disabled={sending}
               className="flex-1 bg-zinc-900 text-white placeholder-zinc-500 border border-zinc-800 rounded-full px-6 py-3 focus:outline-none focus:border-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
             />

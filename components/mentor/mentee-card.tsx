@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, BookOpen, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, BookOpen, Clock, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { MenteeDetails } from '@/lib/api/types';
 
@@ -22,8 +23,7 @@ export function MenteeCard({ mentee }: MenteeCardProps) {
   const hasCourses = mentee.purchased_content && mentee.purchased_content.length > 0;
 
   return (
-    <Link href={`/mentor/mentees/${menteeUser.id}`}>
-      <Card className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer h-full">
+    <Card className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 h-full">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
             {/* Avatar */}
@@ -82,10 +82,24 @@ export function MenteeCard({ mentee }: MenteeCardProps) {
                   </span>
                 )}
               </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 mt-4">
+                <Link href={`/mentor/mentees/${menteeUser.id}`} className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View Details
+                  </Button>
+                </Link>
+                <Link href={`/messages/${menteeUser.id}`}>
+                  <Button size="sm" className="gap-2">
+                    <MessageCircle className="h-4 w-4" />
+                    Message
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-    </Link>
   );
 }
