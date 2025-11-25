@@ -252,7 +252,7 @@ export default function MentorDetailPage() {
   const isOwnProfile = user?.id === mentorId;
   const isPaidMentor = mentorSettings?.accessType === MentorAccessType.PAID;
   const isVIPMentor = mentorSettings?.accessType === MentorAccessType.VIP;
-  const hasSubscriptionAccess = accessStatus?.isSubscribed || isSubscribed;
+  const hasSubscriptionAccess = accessStatus?.hasActiveSubscription || isSubscribed;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/10 to-background">
@@ -299,7 +299,7 @@ export default function MentorDetailPage() {
               {/* Access Type Badge */}
               {mentorSettings && (
                 <div className="mb-4">
-                  <MentorTypeBadge accessType={mentorSettings.accessType} size="lg" />
+                  <MentorTypeBadge accessType={mentorSettings.accessType} className="text-base px-4 py-2" />
                 </div>
               )}
 
@@ -342,7 +342,7 @@ export default function MentorDetailPage() {
                   <div className="relative pl-6 border-l-4 border-primary/30">
                     <Quote className="absolute -left-2 -top-1 h-8 w-8 text-primary/20" />
                     <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
-                      {mentor.bio || "Helping ambitious individuals unlock their full potential through personalized guidance, proven strategies, and transformative mentorship experiences."}
+                      {mentor.longBio || mentor.shortBio || "Helping ambitious individuals unlock their full potential through personalized guidance, proven strategies, and transformative mentorship experiences."}
                     </p>
                   </div>
                 </div>
@@ -560,10 +560,10 @@ export default function MentorDetailPage() {
                             {mentorSettings.baseSubscriptionPrice && (
                               <div className="mb-2">
                                 <PriceDisplay 
-                                  price={mentorSettings.baseSubscriptionPrice}
+                                  amount={mentorSettings.baseSubscriptionPrice}
                                   currency={mentorSettings.currency}
-                                  period={mentorSettings.billingPeriod}
-                                  size="lg"
+                                  billingPeriod={mentorSettings.billingPeriod}
+                                  className="text-5xl font-bold"
                                 />
                               </div>
                             )}
@@ -580,10 +580,10 @@ export default function MentorDetailPage() {
                             {mentorSettings.baseSubscriptionPrice && (
                               <div className="mb-2">
                                 <PriceDisplay 
-                                  price={mentorSettings.baseSubscriptionPrice}
+                                  amount={mentorSettings.baseSubscriptionPrice}
                                   currency={mentorSettings.currency}
-                                  period={mentorSettings.billingPeriod}
-                                  size="lg"
+                                  billingPeriod={mentorSettings.billingPeriod}
+                                  className="text-5xl font-bold"
                                 />
                               </div>
                             )}
@@ -851,18 +851,18 @@ export default function MentorDetailPage() {
               <CardContent className="p-8 lg:p-12">
                 <div className="prose prose-lg dark:prose-invert max-w-none">
                   <p className="text-lg leading-relaxed text-muted-foreground">
-                    {mentor.bio || `${mentor.user?.fullName} is a seasoned professional with ${mentor.experienceYears}+ years of experience in their field. Through personalized mentorship and proven strategies, they help individuals achieve their goals and unlock their full potential.`}
+                    {mentor.longBio || `${mentor.user?.fullName} is a seasoned professional with ${mentor.experienceYears}+ years of experience in their field. Through personalized mentorship and proven strategies, they help individuals achieve their goals and unlock their full potential.`}
                   </p>
                 </div>
 
                 {/* Expertise Tags */}
-                {mentor.industries && mentor.industries.length > 0 && (
+                {mentor.areasOfExpertise && mentor.areasOfExpertise.length > 0 && (
                   <div className="mt-8 pt-8 border-t border-border/50">
                     <h3 className="text-xl font-semibold text-foreground mb-4">Areas of Expertise</h3>
                     <div className="flex flex-wrap gap-3">
-                      {mentor.industries.map((industry, index) => (
+                      {mentor.areasOfExpertise.map((expertise, index) => (
                         <Badge key={index} variant="secondary" className="px-4 py-2 text-sm">
-                          {industry}
+                          {expertise}
                         </Badge>
                       ))}
                     </div>
@@ -871,14 +871,14 @@ export default function MentorDetailPage() {
 
                 {/* Location & Experience */}
                 <div className="mt-8 pt-8 border-t border-border/50 grid sm:grid-cols-2 gap-6">
-                  {mentor.location && (
+                  {mentor.user?.country && (
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                         <MapPin className="h-6 w-6 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Based in</p>
-                        <p className="font-semibold text-foreground">{mentor.location}</p>
+                        <p className="font-semibold text-foreground">{mentor.user.country}</p>
                       </div>
                     </div>
                   )}
